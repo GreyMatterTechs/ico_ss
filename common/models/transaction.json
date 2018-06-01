@@ -1,0 +1,42 @@
+{
+  "name": "transaction",
+  "plural": "transactions",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "EmiterWallet": {
+      "type": "string"
+    },
+    "DateTimeIn": {
+      "type": "string"
+    },
+    "InTransactionHash": {
+      "type": "string"
+    },
+    "NonceIn": {
+      "type": "number"
+    },
+    "NbEthereum": {
+      "type": "number"
+    },
+    "OutTransactionHash": {
+      "type": "string"
+    },
+    "NonceOut": {
+      "type": "number"
+    },
+    "NbToken": {
+      "type": "number"
+    },
+    "DateTimeOut": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": {}
+}

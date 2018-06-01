@@ -1,0 +1,59 @@
+{
+  "name": "Param",
+  "plural": "Params",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "ICOWalletAdress": {
+      "type": "string",
+      "required": true
+  },
+  "TokenContractTransactionHash": {
+    "type": "string",
+    "required": false
+  },
+  "NbTokenToSell": {
+    "type": "number",
+    "required": false
+  },
+  "NbTotalToken": {
+    "type": "number",
+    "required": false
+  },
+  "USDTokenPrice": {
+    "type": "number",
+    "required": false
+  },
+  "USDEthereumPrice": {
+    "type": "number",
+    "required": false
+  },
+  "NbTokenSold": {
+    "type": "number",
+    "required": false
+  },
+  "NbEthereum": {
+    "type": "number",
+    "required": false
+  },
+  "LastProcessedBlock": {
+      "type": "number",
+      "required": false
+  },
+  "BlockTokenStart": {
+    "type": "number",
+    "required": false
+  },
+  "NbBlockTransactionConfirmation": {
+    "type": "number",
+    "required": false
+  }
+},
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": {}
+}
