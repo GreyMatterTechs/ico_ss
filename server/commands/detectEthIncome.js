@@ -1,10 +1,11 @@
 "use strict"
 
 // required
-const Web3 = require('web3');
-const Solc = require('solc');
-const Fs = require('fs');
-const abiDecoder = require('abi-decoder');
+const Web3 = require("web3");
+const Solc = require("solc");
+const Fs = require("fs");
+const abiDecoder = require("abi-decoder");
+const Async = require("async");
 
 var appname;
 var mParam;
@@ -201,20 +202,23 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
         function sendTokenForTransaction(transactions, tokenContractInstance, procTrans, missingToken){
             var notProcessedTrans = transactions.filter(item => procTrans.every(cItem => !(cItem.EmiterWallet === item.from && cItem.InTransactionHash === item.hash)));
-            displayTransactionTo(notProcessedTrans);
 
-            notProcessedTrans.forEach( function(e) {
+            Async.forEach(notProcessedTrans, function(e) {
                 var nbEth = web3.fromWei(e.value, 'ether');
                 console.log(" received: %f Eth from %s, tx hash: %s", nbEth.toFixed(8), e.from, e.hash);
                 var nbTokenToTransfert = nbEth / tokenPriceEth;
                 var nbTokenUnitToTransfert = nbTokenToTransfert * Math.pow(10, decimal);
                 console.log(" -> Send: %f SSWT to %s", nbTokenToTransfert.toFixed(8), e.from);
 
-                if (!missingToken){
+                if (!missingToken) {
                     ethereumReceived += nbEth.toNumber();
                     nbTokenSold += nbTokenToTransfert;
                 }
-
+/*              // code fail sim
+                if (Math.random() > 0.5) {
+                    return;
+                }
+*/
                 params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold }, function (err, instance) {
                     if (err) {
                         console.log("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
@@ -234,14 +238,14 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     })
                 }
                 else{
-                    mTransaction.find({ where: { EmiterWallet: e.from, Nonce: e.nonce }}, function(err, instances) {
+                    mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, function(err, instances) {
                         if (err) {
                             console.log("Error occurs when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
                         }
                         else
                         {
                             if (instances.length != 1) {
-                                console.log("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
+                                console.log("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send", e.hash);
                             }
                             else {
                                 sendToken(instances[0]);
@@ -249,10 +253,20 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         }
                     })
                 }
-            })
+            }, function(err) {
+                if(err)
+                {
+                    console.log("Error %o occurs during async.forEach for sendTokenForTransaction", err);
+                }
+            });
         }
 
         function sendToken(instance) {
+/*            
+            if (Math.random() > 0.5) {
+                return;
+            }
+*/            
             tokenContractInstance.transfer(instance.EmiterWallet, instance.NbToken, function(err, thash) {
                 if (!err) {
                     web3.eth.getTransaction(thash, function(err, trans){
@@ -262,6 +276,11 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         else {
                             console.log("Tokens sended to: %s, transaction hash: %s", trans.to, trans.hash);
                             // update transaction table
+/*                            
+                            if (Math.random() > 0.5){
+                                return;
+                            }
+*/                            
                             instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": instance.NbToken / Math.pow(10, decimal) }, function (err, instance) {
                                 if (err) {
                                     console.log("Error: can't update transaction table after transaction hash: %s is mined, error: %o", trans.hash, err);
@@ -278,75 +297,49 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
 
         function checkTransaction(bcTransIn , bcTransOut, procTrans, tokenContractInstance){
-/*            
-            1 Toute transaction entrée Block Chaine      A Toute Transaction sortie Blockchaine
-            2 = 1 - table => transaction entrée manquante table => les traiter en derniers
-            3 = 1 - 2 = Toute transaction entrée block chaine deja traitée
-            B = A - filtre toutes transaction de sortie non renseigné en table
-            5 = 3 - filtre Transaction sortie hash manquante => table incompléte
-            6 = 5 matching B => renseigne la table avec les transactions emises
-            7 = 5 - transaction matching trouvé en 6 => transaction de sortie non emise
-*/
-
-            // 2 On selectione les transactions de reception d'ethereum manquantes dans la table
+            // On selectione les transactions de reception d'ethereum manquantes dans la table
             var missingTransactionIn = bcTransIn.filter(bcTin => procTrans.every(pT => !(pT.EmiterWallet === bcTin.from && pT.InTransactionHash === bcTin.hash)));
-            // 3 On selectione toutes les transactions de reception d'ethereum qui ont été detectées
+            // On selectione toutes les transactions de reception d'ethereum qui ont été detectées
             var InTableTransactionIn = bcTransIn.filter(bcTin => missingTransactionIn.every(mti => !(mti.from === bcTin.from && mti.hash === bcTin.hash)));
-            // 5 on selectione toutes les transaction de reception d'ethereum detectées qui n'ont pas de transaction d'emmissions de token renseignées
+            // on selectione toutes les transaction de reception d'ethereum detectées qui n'ont pas de transaction d'emmissions de token renseignées
             var missingTokenInfo = InTableTransactionIn.filter(bcTin => procTrans.some(pT => (pT.EmiterWallet === bcTin.from && pT.InTransactionHash == bcTin.hash && pT.NonceIn === bcTin.nonce && pT.OutTransactionHash === undefined)));
-            
-            // B on selectione toutes les transactions d'emission de token qui ne sont pas dans la table
-            var missingTransOutInTable = bcTransOut.filter(bcTout => procTrans.every(pT => !(pT.EmiterWallet === bcTout.to && pT.OutTransactionHash === bcTout.hash)));
-/*
-            // on match les transaction de token emises qui ne sont pas dans la table mais sont sur la blockchain (transaction d'envois de token emise mais non rensignées en table)
-            var newTableMatching;
+            // on selectione toutes les transactions d'emission de token qui ne sont pas renseignées dans la table (OutTransactionHash non renseignée)
+            var missingTransOutInTable = bcTransOut.filter(function(value){
+                const decodedData = abiDecoder.decodeMethod(value.input);
+                return procTrans.every(pT => !(pT.EmiterWallet === decodedData.params[0].value && pT.OutTransactionHash == value.hash));
+            });
+
+            // on match les transaction de token emises qui ne sont pas dans la table mais sont sur la blockchain (transaction d'envois de token emise mais non renseignées en table)
             if (missingTransOutInTable.length > 0) {
                 console.log("checkTransaction found %d missing processed transaction out (token sent) in table", missingTransOutInTable.length);
-                displayTransactionFrom(missingTransOutInTable);
-                missingTransOutInTable.forEach(function(t) {
-                    mTransaction.find( { where: { EmiterWallet: t.to, OutTransactionHash: undefined }}, function(err, instances) {
-                        if (err) {
-                            console.log("Error: can't find transaction in table for EmiterWallet: %s and OutTransactionHash: null during checkTransaction, error: %o", t.to, err);
+                Async.forEach(missingTransOutInTable, function(t) {
+                    const decodedData = abiDecoder.decodeMethod(t.input);
+                    for (var i = 0; i < procTrans.length; ++i) {
+                        if (decodedData.params[0].value === procTrans[i].EmiterWallet && decodedData.params[1].value == procTrans[i].NbToken && procTrans[i].OutTransactionHash === undefined) {
+                            procTrans[i].updateAttributes( { "OutTransactionHash": t.hash, "NonceOut": t.nonce, "NbToken": decodedData.params[1].value / Math.pow(10, decimal), "DateTimeOut": (new Date()).toUTCString() }, function (err, instance) {
+                                if (err) {
+                                    console.log("Error: can't update transaction table for out transaction hash: %s during checkTransaction, error: %o", t.hash, err);
+                                }
+                            })
+                            break;
                         }
-                        else {
-                            displayTransactionTable(instances);
-                            var instanceSelected = null;
-                            if (instances.length > 1) {
-                                console.log("Many instance found (%d) when find transaction in table (for outpout transaction hash: %s) for mising token send table update, select one", instances.length, t.hash);
-                                instanceSelected = instances[0]; // need to be improved
-                            }
-                            else if ( instances.length === 1){
-                                instanceSelected = instances[0];
-                            }
-                            if (instanceSelected !== null) {
-                                instanceSelected.updateAttributes( { "OutTransactionHash": t.hash, "NonceOut": t.nonce, "NbToken": instance.NbToken * Math.pow(10, decimal), "DateTimeOut": (new Date()).toUTCString() }, function (err, instance) {
-                                    if (err) {
-                                        console.log("Error: can't update transaction table for out transaction hash: %s during checkTransaction, error: %o", t.hash, err);
-                                    }
-                                    else {
-                                        newTableMatching.push(instance);
-                                    }
-                                })
-                            }
-                            else{
-                                console.log("Can't find any transaction in table who match EmiterWallet: %s and OutTransactionHash: null during checkTransaction", t.to);
-                            }
-                        }
-                    })
-                })
-                console.log("need to launch CheckandFix again when this update are finished");
-                return;
+                    }
+                }, function(err) {
+                    if(err)
+                    {
+                        console.log("Error %o occurs during async.forEach on missingTransOutInTable", err);
+                    }
+                });
             }
 
-            // on retire les transactions matchées aux transactions non renseignée
-            var missingTokenSend = missingTransOutInTable.filter(mto => newTableMatching.every(ntm => !(mto.EmiterWallet === ntm.EmiterWallet && mto.InTransactionHash == ntm.InTransactionHash)));
+            // on selectione toutes les transaction de reception d'ethereum detectées qui n'ont pas de transaction d'emmissions de token renseignées
+            var missingTokenSend = InTableTransactionIn.filter(bcTin => procTrans.some(pT => (pT.EmiterWallet === bcTin.from && pT.InTransactionHash == bcTin.hash && pT.NonceIn === bcTin.nonce && pT.OutTransactionHash === undefined)));
             if (missingTokenSend.length > 0){
                 console.log("checkTransaction found %d missing Token transaction sending for received ethereum", missingTokenSend.length);
                 sendTokenForTransaction(missingTokenSend, tokenContractInstance, [], true);
             }
-*/
+
             // On check si il manque le traitement de reception d'ethereum (rien dans la table concernant une reception d'ethereum)
-            var missingTransactionIn = bcTransIn.filter(bcTin => procTrans.every(pT => !(pT.EmiterWallet === bcTin.from && pT.InTransactionHash === bcTin.hash)));
             if (missingTransactionIn.length > 0) {
                 console.log("checkTransaction found %d missing processed transaction in (ethreum received)", missingTransactionIn.length);
                 sendTokenForTransaction(missingTransactionIn, tokenContractInstance, procTrans, false);
@@ -361,7 +354,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var NbBlockTransactionConfirmation = params[0].NbBlockTransactionConfirmation;
         var totalToken = params[0].NbTotalToken;
         var totalTokenToSend = params[0].NbTokenToSell;
-        var ethereumReceived = 0;
+        var ethereumReceived = params[0].NbEthereum;
 
         if (checkMode) {
             startBlock = params[0].BlockTokenStart;
@@ -373,7 +366,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 startBlock = 0;
             }
             lastBlock = startBlock;
-            ethereumReceived = params[0].NbEthereum;
         }
 
         var balance = tokenContractInstance.balanceOf(ICOWalletAdresse);
@@ -425,12 +417,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         transactions.push(transactionsER[0].concat(transactionsR[0]));
                         transactions.push(transactionsER[1].concat(transactionsR[1]));
 
-                        // display transaction received
-                        console.log("Transaction reçu: %d, transaction emises: %d", transactions[1].length, transactions[0].length);
-                        displayTransactionTo(transactions[1]);
-                        console.log("============================================================================");
-                        displayTransactionFrom(transactions[0])
-                        
                         checkTransaction(transactions[1], transactions[0], procTrans, tokenContractInstance);
                         console.log("Check transaction process finished!")
                         balance = tokenContractInstance.balanceOf(ICOWalletAdresse);
