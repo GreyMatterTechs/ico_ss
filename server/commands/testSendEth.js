@@ -2,6 +2,7 @@
 
 const Web3 = require('web3');
 const Tx = require('ethereumjs-tx');
+const Async = require("async");
 
 var appname;
 var mParam;
@@ -25,23 +26,17 @@ TestSendEthereum.prototype.Init = function (cb) {
   console.log(appname + ': Init TestSendEthereum...');
   initCalled = true;
 
-  var web3;
-
   // connection to local node
-  if (typeof web3 !== 'undefined') {
-      web3 = new Web3(web3.currentProvider);
-    } else {
-      // set the provider you want from Web3.providers
-      web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));  
-  }
+  // set the provider you want from Web3.providers
+  var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));  
 
   // function for transfert ethereum from owner to destinatire
   function transfertEthereum(ethOwner, ethDestinataire, eth){
-    try{ // transfer ethereum
-      var nonceValue = web3.eth.getTransactionCount(ethOwner);
+    try { // transfer ethereum
+//      var nonceValue = web3.eth.getTransactionCount(ethOwner);
 
       var tx = {
-        nonce: nonceValue,
+//        nonce: nonceValue,
         gasPrice: '2', 
         gasLimit: '900',
         from: ethOwner,

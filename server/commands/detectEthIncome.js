@@ -6,6 +6,7 @@ const Solc = require("solc");
 const Fs = require("fs");
 const abiDecoder = require("abi-decoder");
 const Async = require("async");
+const debug = require("debug")("loopback:DetectEthereumIncome");
 
 var appname;
 var mParam;
@@ -40,6 +41,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
     let compiledContract = Solc.compile(source, 1);
     if (compiledContract.errors != undefined)
     {
+        debug("Error or warning during contract compilation: %o", compiledContract.errors);
         console.log("Error or warning during contract compilation: %o", compiledContract.errors);
         return cb("Error or warning during contract compilation: " + JSON.stringify(compiledContract.errors));
     }
@@ -51,6 +53,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
     mParam.find(function(err, params) {
         if (err){
+            debug("Erreur occurs when reading Param table, error: %o", err);
             console.log("Erreur occurs when reading Param table, error: %o", err);
             return;
         }
@@ -60,19 +63,25 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
     function ParamsReceived(params, cb, checkMode) {
         if (params.length === 0)
         {
-            console.log("Wallet to send adress not defined !");
+            debug("Wallet for initial token owner not defined !");
+            console.log("Wallet for initial token owner not defined !");
             return;
         }
         // wallet adresse & private key and contract transaction hash used for create the token
-        var ICOWalletAdresse = params[0].ICOWalletAdress;
-        console.log("Inital token owner is: ", ICOWalletAdresse);
-        if (ICOWalletAdresse === "" || ICOWalletAdresse === undefined) {
-            console.log("Wallet to send adress not defined !");
+        var ICOWalletAdresse = undefined;
+        if (params.length !== 0) {
+            ICOWalletAdresse = params[0].ICOWalletAdress;
+            console.log("Inital token owner is: ", ICOWalletAdresse);
+        }
+        if (ICOWalletAdresse === "" || ICOWalletAdresse === undefined || ICOWalletAdresse === null) {
+            debug("Wallet for initial token owner not defined !");
+            console.log("Wallet for initial token owner not defined !");
             return;
         }
     
         var tokenContractTransactionHash = params[0].TokenContractTransactionHash;
         if (tokenContractTransactionHash === "" || tokenContractTransactionHash === undefined) {
+            debug("Token smart contract transaction hash not defined !");
             console.log("Token smart contract transaction hash not defined !");
             return;
         }
@@ -82,6 +91,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var tokenPriceEth = tokenPriceUSD / ethereumPrice;
 
         if (tokenPriceEth.isNaN || tokenPriceEth === 0) {
+            debug("Token price not correctly defined !, Etherum USD Price: " + ethereumPrice + "Token USD price: " + tokenPriceUSD, null);
             console.log("Token price not correctly defined !, Etherum USD Price: " + ethereumPrice + "Token USD price: " + tokenPriceUSD, null);
             return;
         }
@@ -91,6 +101,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         // get transaction receipt who create the token
         var transactionReceipt = web3.eth.getTransactionReceipt(tokenContractTransactionHash);
         if (transactionReceipt === null) {
+            debug("Problem with smart-contrat, transaction receipt can't be obtened, check token contract deploy on node and contrat transaction hash on Param table!");
             console.log("Problem with smart-contrat, transaction receipt can't be obtened, check token contract deploy on node and contrat transaction hash on Param table!");
             return;
         }
@@ -98,6 +109,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         // get contract instance
         var tokenContractInstance = tokenContract.at(transactionReceipt.contractAddress);
         if (tokenContractInstance === null || tokenContractInstance === undefined) {
+            debug("Problem with smart-contrat, instance value can be obtened, check token contract deploy and contrat transaction hash on Param table!");
             console.log("Problem with smart-contrat, instance value can be obtened, check token contract deploy and contrat transaction hash on Param table!");
             return;
         }
@@ -175,21 +187,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         function displayTransactionFrom(transactions) {
             transactions.forEach( function(e) {
                 const decodedData = abiDecoder.decodeMethod(e.input);
-
                 console.log(" call smart contrat function: %s for send %f Token to %s and %f Eth, tx hash: %s", decodedData.name, decodedData.params[1].value / Math.pow(10, decimal), decodedData.params[0].value, web3.fromWei(e.value, 'ether').toFixed(8), e.hash );
-/*
-                console.log("  tx hash          : " + e.hash + "\n"
-                + "   nonce           : " + e.nonce + "\n"
-                + "   blockHash       : " + e.blockHash + "\n"
-                + "   blockNumber     : " + e.blockNumber + "\n"
-                + "   transactionIndex: " + e.transactionIndex + "\n"
-                + "   from            : " + e.from + "\n" 
-                + "   to              : " + e.to + "\n"
-                + "   value           : " + e.value + "\n"
-                + "   gasPrice        : " + e.gasPrice + "\n"
-                + "   gas             : " + e.gas + "\n"
-                + "   input           : " + JSON.stringify(abiDecoder.decodeMethod(e.input)));
-*/
             })
         }
 
@@ -221,6 +219,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 */
                 params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold }, function (err, instance) {
                     if (err) {
+                        debug("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
                         console.log("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
                     }
                 });        
@@ -229,6 +228,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     // add transaction in table
                     mTransaction.create({ EmiterWallet: e.from, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: e.hash, NonceIn: e.nonce, NbEthereum: nbEth, NbToken: nbTokenUnitToTransfert }, (err, instance) => {
                         if (err) {
+                            debug("Error occurs when adding transaction in table(for input transaction hash: %s) error: %o", e.hash, err);
                             console.log("Error occurs when adding transaction in table(for input transaction hash: %s) error: %o", e.hash, err);
                         }
                         else
@@ -240,11 +240,13 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 else{
                     mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, function(err, instances) {
                         if (err) {
+                            debug("Error occurs when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
                             console.log("Error occurs when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
                         }
                         else
                         {
                             if (instances.length != 1) {
+                                debug("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send", e.hash);
                                 console.log("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send", e.hash);
                             }
                             else {
@@ -256,6 +258,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }, function(err) {
                 if(err)
                 {
+                    debug("Error %o occurs during async.forEach for sendTokenForTransaction", err);
                     console.log("Error %o occurs during async.forEach for sendTokenForTransaction", err);
                 }
             });
@@ -271,6 +274,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 if (!err) {
                     web3.eth.getTransaction(thash, function(err, trans){
                         if(err){
+                            debug("Error: web3.eth.getTransaction() return an error after send/deploy transaction (transaction hash: %s) error: %o", thash, err);
                             console.log("Error: web3.eth.getTransaction() return an error after send/deploy transaction (transaction hash: %s) error: %o", thash, err);
                         }
                         else {
@@ -283,6 +287,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 */                            
                             instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": instance.NbToken / Math.pow(10, decimal) }, function (err, instance) {
                                 if (err) {
+                                    debug("Error: can't update transaction table after transaction hash: %s is mined, error: %o", trans.hash, err);
                                     console.log("Error: can't update transaction table after transaction hash: %s is mined, error: %o", trans.hash, err);
                                 }
                             })
@@ -318,6 +323,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         if (decodedData.params[0].value === procTrans[i].EmiterWallet && decodedData.params[1].value == procTrans[i].NbToken && procTrans[i].OutTransactionHash === undefined) {
                             procTrans[i].updateAttributes( { "OutTransactionHash": t.hash, "NonceOut": t.nonce, "NbToken": decodedData.params[1].value / Math.pow(10, decimal), "DateTimeOut": (new Date()).toUTCString() }, function (err, instance) {
                                 if (err) {
+                                    debug("Error: can't update transaction table for out transaction hash: %s during checkTransaction, error: %o", t.hash, err);
                                     console.log("Error: can't update transaction table for out transaction hash: %s during checkTransaction, error: %o", t.hash, err);
                                 }
                             })
@@ -327,6 +333,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 }, function(err) {
                     if(err)
                     {
+                        debug("Error %o occurs during async.forEach on missingTransOutInTable", err);
                         console.log("Error %o occurs during async.forEach on missingTransOutInTable", err);
                     }
                 });
@@ -345,6 +352,9 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 sendTokenForTransaction(missingTransactionIn, tokenContractInstance, procTrans, false);
                 console.log("checkTransaction added %d missing processed transaction in (ethreum received)", missingTransactionIn.length);
                 console.log("--------------------------------------------------------------------------------------");
+            }
+            if (missingTransactionIn.length === 0 && missingTransOutInTable.length === 0 && missingTokenSend.length === 0) {
+                console.log("checkTransaction finished with no error found!");
             }
         }
 
@@ -449,6 +459,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                             params[0].updateAttributes( { "LastProcessedBlock" : lastBlock }, function (err, instance) {
                                 if (err) {
+                                    debug("error: Unable to update LastProcessedBlock: %O", err);
                                     console.log("error: Unable to update LastProcessedBlock: %O", err);
                                 }
                             });        

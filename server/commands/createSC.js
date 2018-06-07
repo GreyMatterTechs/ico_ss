@@ -48,7 +48,6 @@ SmartContract.prototype.create = function (cb) {
   // get parameters from table Param
   mParam.find(function(err, param) {
     if (err || param.length === 0){
-      //return cb(err, null);
       console.log("Table Param empty, create default params");
       mParam.create({ ICOWalletAdress: "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1", USDEthereumPrice: 600.0, USDTokenPrice: 0.1 }, (err, instance) => {
         if (err) {
@@ -125,7 +124,7 @@ SmartContract.prototype.create = function (cb) {
     var adjustedBalance = balance / Math.pow(10, decimal);
     var tokenName = tokenContractInterface.name();
     var tokenSymbol = tokenContractInterface.symbol();
-
+/*
     param[0].updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 70000000, 
                                     "USDTokenPrice": 0.1, "USDEthereumPrice": 600, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
       if (err) {
@@ -134,6 +133,7 @@ SmartContract.prototype.create = function (cb) {
       console.log("New Token ERC20 infos: TokenName: %s, TokenSymbol: %s, Decimal: %d, Token owner balance: %d", tokenName, tokenSymbol, decimal.toNumber(), adjustedBalance);
       return cb(null, "New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance);
     });        
+*/    
   }
 };
 
