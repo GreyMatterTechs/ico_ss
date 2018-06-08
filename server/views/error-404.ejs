@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html class="body-full-height">
+    <head>        
+   		<%- include('partials/head-meta'); %>
+        
+        <!-- CSS INCLUDE -->        
+        <link rel="stylesheet" type="text/css" id="theme" href="css/theme-default.css"/>
+        <!-- EOF CSS INCLUDE -->                   
+    </head>
+    <body class="nojs">
+		<%- include('partials/noscript'); %>
+		<%- include('partials/banner'); %>
+
+
+		<div class="error-container">
+			<div class="error-code">404</div>
+			<div class="error-text">page not found</div>
+			<div class="error-subtext">Unfortunately we're having trouble loading the page you are looking for. Please wait a moment and try again or use action below.</div>
+			<div class="error-actions">                                
+				<div class="row">
+					<div class="col-md-6">
+						<button class="btn btn-info btn-block btn-lg" onClick="document.location.href = '/';">Back to dashboard</button>
+					</div>
+					<div class="col-md-6">
+						<button class="btn btn-primary btn-block btn-lg" onClick="history.back();">Previous page</button>
+					</div>
+				</div>                                
+			</div>
+			<div class="error-subtext">Or you can use search to find anything you need.</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="input-group">
+						<input type="text" placeholder="Search..." class="form-control"/>
+						<div class="input-group-btn">
+							<button class="btn btn-primary"><span class="fa fa-search"></span></button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+        
+    <!-- START SCRIPTS -->
+        <!-- START PLUGINS -->
+        <script type="text/javascript" src="js/plugins/jquery/jquery.min.js"></script>
+        <script type="text/javascript" src="js/plugins/jquery/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="js/plugins/bootstrap/bootstrap.min.js"></script>      
+        <script type="text/javascript" src="js/plugins/async/async.min.js"></script>  
+        <!-- END PLUGINS -->
+
+        <!-- START THIS PAGE PLUGINS-->        
+		<script type="text/javascript" src="js/plugins/jquery-i18n/CLDRPluralRuleParser.js"></script>
+		<script type="text/javascript" src="js/plugins/jquery-i18n/jquery.i18n.js"></script>
+		<script type="text/javascript" src="js/plugins/jquery-i18n/jquery.i18n.messagestore.js"></script>
+		<script type="text/javascript" src="js/plugins/jquery-i18n/jquery.i18n.fallbacks.js"></script>
+		<script type="text/javascript" src="js/plugins/jquery-i18n/jquery.i18n.parser.js"></script>
+		<script type="text/javascript" src="js/plugins/jquery-i18n/jquery.i18n.emitter.js"></script>
+		<script type="text/javascript" src="js/plugins/jquery-i18n/jquery.i18n.language.js"></script>
+		<script type="text/javascript" src="js/plugins/jquery-i18n/languages/uk.js"></script>
+        <!-- END THIS PAGE PLUGINS-->
+
+        <!-- START TEMPLATE -->
+        <script type="text/javascript" src="js/tools.js"></script>
+        <script type="text/javascript" src="js/i18n.js"></script>
+        <script type="text/javascript" src="js/messagesMenu.js"></script>
+        <script type="text/javascript" src="js/plugins.js"></script>        
+        <script type="text/javascript" src="js/actions.js"></script>
+        <!-- END TEMPLATE -->
+
+    <!-- END SCRIPTS -->         
+    </body>
+</html>

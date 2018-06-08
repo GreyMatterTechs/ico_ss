@@ -1,6 +1,8 @@
 {
   "initial:before": {
-    "loopback#favicon": {}
+    "loopback#favicon": {
+		"params": "$!../client/img/favicon.ico"
+	}
   },
   "initial": {
     "compression": {},
@@ -32,7 +34,14 @@
   },
   "session": {},
   "auth": {},
-  "parse": {},
+  "parse": {
+	"body-parser#json": {},
+	"body-parser#urlencoded": {
+		"params": {
+			"extended": true
+		}
+	}
+  },
   "routes": {
     "loopback#rest": {
       "paths": [
@@ -40,11 +49,32 @@
       ]
     }
   },
-  "files": {},
+  "files": {
+	"loopback#static": [
+		{
+			"paths": "/client",
+			"params": "$!../client"
+		},
+		{
+			"paths": "/storage",
+			"params": "$!../storage"
+		}
+	]
+  },
   "final": {
-    "loopback#urlNotFound": {}
+	"./middleware/url-not-found-handler": {}
   },
   "final:after": {
-    "strong-error-handler": {}
+    "strong-error-handler": {
+		"params": {
+			"debug": true,
+			"log": true,
+			"includeStack": true,
+			"safeFields": [
+				"errorCode"
+			],
+			"defaultType": "html"
+		}
+	}
   }
 }

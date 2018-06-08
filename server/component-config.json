@@ -1,6 +1,11 @@
 {
   "loopback-component-explorer": {
-    "mountPath": "/explorer",
-    "generateOperationScopedModels": true
+    "basePath": "/api",
+	"mountPath": "/explorer",
+    "generateOperationScopedModels": true,
+	"apiInfo": {
+	  "title": "ico_ss",
+	  "description": "Description of ICO_SS APIs."
+	}
   }
 }

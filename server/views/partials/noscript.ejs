@@ -1,0 +1,12 @@
+		<noscript>
+			<input type="checkbox" class="noscript-closing-trick" >
+			<div class="noscript-overlay" style="display: block;"></div>
+			<div class="noscript-message">
+				<div class="noscript-title"><%= appName %> doesn't work without JavaScript.</div>
+				<p>We're all for progressive enhancement, but <%= appName %> is a bit unique in that it's all about writing and showing front end code, including JavaScript. It's required to use most of the features of <%= appName %>.</p>
+				<p>Need to know how to enable it? <a href="http://enable-javascript.com/" target="_blank" rel="noopener">Go here.</a></p>
+			</div>
+		</noscript>
+		<script type="text/javascript">
+			document.body.classList.remove("nojs");
+		</script>

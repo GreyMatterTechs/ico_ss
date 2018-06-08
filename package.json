@@ -1,6 +1,7 @@
 {
-  "name": "ICODb",
+  "name": "ico_ss",
   "version": "1.0.0",
+  "description": "ICO App for SecureSwap",
   "main": "server/server.js",
   "engines": {
     "node": ">=4"
@@ -13,14 +14,19 @@
   "dependencies": {
     "abi-decoder": "^1.1.0",
     "async": "^2.6.1",
+    "body-parser": "^1.18.3",
     "compression": "^1.0.3",
     "cors": "^2.5.2",
     "fs-extra": "^6.0.1",
-    "helmet": "^3.10.0",
+    "geoip-lite": "^1.2.1",
+    "helmet": "^3.12.1",
     "loopback": "^3.19.0",
     "loopback-boot": "^2.6.5",
     "loopback-component-explorer": "^6.0.0",
+    "loopback-connector-mongodb": "^3.4.4",
+    "loopback-connector-mysql": "^5.2.0",
     "moment-timezone": "^0.5.17",
+    "request-ip": "^2.0.2",
     "serve-favicon": "^2.0.1",
     "strong-error-handler": "^2.0.0",
     "superagent": "^3.8.3"
@@ -34,6 +40,5 @@
     "type": "",
     "url": ""
   },
-  "license": "UNLICENSED",
-  "description": "ICODb"
+  "license": "UNLICE"
 }

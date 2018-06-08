@@ -1,7 +1,10 @@
 {
+  "currentEnv": "production",
   "restApiRoot": "/api",
   "host": "0.0.0.0",
   "port": 3000,
+  "nginxhost": "www.secureswap.com",
+  "nginxport": 80,
   "remoting": {
     "context": false,
     "rest": {
@@ -18,5 +21,7 @@
       "limit": "100kb"
     },
     "cors": false
-  }
+  },
+  "legacyExplorer": false,
+  "appName": "ico_ss"
 }
