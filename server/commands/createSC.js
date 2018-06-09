@@ -44,7 +44,7 @@ var SmartContract = function (_server) {
  * @class SmartContract
  * @private
  */
-function WalletReceived(param, cb) {
+function WalletReceived(param, web3, cb) {
 	var tokenInitialOwnerAdresse = param.ICOWalletAdress;	// $$$ donc tu voulais un array, donc l'appel avec instance est faux, d'ailleurs, ça crashe... 
 	console.log("Inital token owner is: ", tokenInitialOwnerAdresse);
 
@@ -137,7 +137,7 @@ SmartContract.prototype.create = function (cb) {
 		console.log("Error occurs when cleaning Transaction table. error: %o", err);
 		return cb("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err), null);
 	}
-	console.log(info.count + "were destroyed from Transaction table");	
+	console.log(info.count + " were destroyed from Transaction table");	
 
 	// get parameters from table Param
 	// $$$ Pourquoi mettre ces paramètres dans une base de données, plutôt que dans un simple fichier de config ?
@@ -150,12 +150,12 @@ SmartContract.prototype.create = function (cb) {
 					console.log("Error occurs when adding default param in table Param error: %o", err);
 					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
 				}
-				WalletReceived(instance, cb);	// $$$ ici tu passe l'instance, donc un objet
+				WalletReceived(instance, web3, cb);	// $$$ ici tu passe l'instance, donc un objet
 			});
 		}
 		else
 		{
-			WalletReceived(param[0], cb);	// $$$ ici tu passe un array d'instances
+			WalletReceived(param[0], web3, cb);	// $$$ ici tu passe un array d'instances
 		}
 	});
   });  
