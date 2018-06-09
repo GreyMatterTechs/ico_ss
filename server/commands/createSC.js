@@ -36,19 +36,16 @@ var SmartContract = function (_server) {
  * Create ERC20 contract
  * Deploy (mine) the contract
  *
- * @param {Array} param Wallet adress of Token owner
+ * @param {object} param Wallet adress of Token owner
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
  * @param {Error} err Error information
- * @param {Object} tokenInfos New Token ERC20 infos object
+ * @param {string} tokenInfos New Token ERC20 infos object
  *
  * @class SmartContract
  * @private
  */
 function WalletReceived(param, cb) {
-	if (param.length === 0) {	// $$$ selon l'appelant, param est soit un objet, soit un array, donc tu peux pas te baser sur length
-		return cb("Wallet adress of Token owner not defined !", null);
-	}
-	var tokenInitialOwnerAdresse = param[0].ICOWalletAdress;	// $$$ donc tu voulais un array, donc l'appel avec instance est faux, d'ailleurs, ça crashe... 
+	var tokenInitialOwnerAdresse = param.ICOWalletAdress;	// $$$ donc tu voulais un array, donc l'appel avec instance est faux, d'ailleurs, ça crashe... 
 	console.log("Inital token owner is: ", tokenInitialOwnerAdresse);
 
 	let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
@@ -102,18 +99,15 @@ function WalletReceived(param, cb) {
 	var adjustedBalance = balance / Math.pow(10, decimal);
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
-	/*	// $$$ pourquoi commenter ça ?
-		//     du coup tu n'appelle jamais cb(), et donc le browser ne reçoit jamais la réponse à sa requete...
 
-		param[0].updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 70000000, 
-										"USDTokenPrice": 0.1, "USDEthereumPrice": 600, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
-		  if (err) {
+	param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 70000000, 
+							  "USDTokenPrice": 0.1, "USDEthereumPrice": 600, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
+		if (err) {
 			return cb(err, null);
-		  }
-		  console.log("New Token ERC20 infos: TokenName: %s, TokenSymbol: %s, Decimal: %d, Token owner balance: %d", tokenName, tokenSymbol, decimal.toNumber(), adjustedBalance);
-		  return cb(null, "New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance);
-		});        
-	*/
+		}
+		console.log("New Token ERC20 infos: TokenName: %s, TokenSymbol: %s, Decimal: %d, Token owner balance: %d", tokenName, tokenSymbol, decimal.toNumber(), adjustedBalance);
+		return cb(null, "New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance);
+	});        
 }
 
 /**
@@ -127,7 +121,7 @@ function WalletReceived(param, cb) {
  * 
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
  * @param {Error} err Error information
- * @param {Object} tokenInfos New Token ERC20 infos object
+ * @param {string} tokenInfos New Token ERC20 infos object
  * 
  * @class SmartContract
  * @public
@@ -135,16 +129,8 @@ function WalletReceived(param, cb) {
 SmartContract.prototype.create = function (cb) {
   console.log(config.appName + ': Creating...');
     
-  var web3; // $$$ pour moi , en faisant ça, cette variable sera TOUJOURS undefined... à tester.
+  var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));  
   
-  // connection to local node
-  if (typeof web3 !== 'undefined') {
-      web3 = new Web3(web3.currentProvider);
-  } else {
-    // set the provider you want from Web3.providers
-    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));  
-  }
-
   // delete all transactions in transaction table
   mTransaction.destroyAll(function(err, info){
 	if (err) {
@@ -169,12 +155,10 @@ SmartContract.prototype.create = function (cb) {
 		}
 		else
 		{
-			WalletReceived(param, cb);	// $$$ ici tu passe un array d'instances
+			WalletReceived(param[0], cb);	// $$$ ici tu passe un array d'instances
 		}
 	});
-
   });  
-
 };
 
 //---------------------------------------------------------------------------
