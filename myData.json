@@ -5,7 +5,7 @@
     "ACL": 1,
     "RoleMapping": 1,
     "Role": 1,
-    "Param": 2,
+    "Param": 3,
     "transaction": 3394
   },
   "models": {
@@ -14,7 +14,9 @@
     "ACL": {},
     "RoleMapping": {},
     "Role": {},
-    "Param": {},
+    "Param": {
+      "2": "{\"ICOWalletAdress\":\"0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1\",\"USDTokenPrice\":0.1,\"USDEthereumPrice\":600,\"id\":2}"
+    },
     "transaction": {}
   }
 }

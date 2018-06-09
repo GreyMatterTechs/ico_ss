@@ -1,12 +1,14 @@
 "use strict"
 
 // required
-const Web3 = require("web3");
-const Solc = require("solc");
-const Fs = require("fs");
-const abiDecoder = require("abi-decoder");
-const Async = require("async");
-const debug = require("debug")("loopback:DetectEthereumIncome");
+const Web3		= require("web3");
+const Solc		= require("solc");
+const Fs		= require("fs");
+const abiDecoder= require("abi-decoder");
+const Async		= require("async");
+const path		= require('path');
+const debug		= require('debug')('ico_ss:DetectEthereumIncome');
+const config	= require( path.join(__dirname, '../config' + (process.env.NODE_ENV!=='development' ? ('.'+process.env.NODE_ENV) : '') + '.json') );
 
 var appname;
 var mParam;
@@ -180,7 +182,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         function displayTransactionTo(transactions) {
             transactions.forEach( function(e) {
                 console.log(" received: %f Eth from %s, tx hash: %s", web3.fromWei(e.value, 'ether').toFixed(8), e.from, e.hash);
-            })
+            });
         }
 
         // display transactions
@@ -188,14 +190,14 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             transactions.forEach( function(e) {
                 const decodedData = abiDecoder.decodeMethod(e.input);
                 console.log(" call smart contrat function: %s for send %f Token to %s and %f Eth, tx hash: %s", decodedData.name, decodedData.params[1].value / Math.pow(10, decimal), decodedData.params[0].value, web3.fromWei(e.value, 'ether').toFixed(8), e.hash );
-            })
+            });
         }
 
         // display transaction int table
         function displayTransactionTable(transactions) {
             transactions.forEach( function(e){
                 console.log("Emitter: %s, NonceIn: %d, DateTimeIn: %s, InTransactionHash: %s, NbEthereum: %f, OutTransanctionHash: %s, NonceOut: %d, NbToken: %f, DateTimeOut: %s", e.EmiterWallet, e.NonceIn, e.DateTimeIn, e.InTransactionHash, e.NbEthereum, e.OutTransactionHash, e.NonceOut, e.NbToken, e.DateTimeOut);
-            })
+            });
         }
 
         function sendTokenForTransaction(transactions, tokenContractInstance, procTrans, missingToken){

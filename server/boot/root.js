@@ -84,10 +84,10 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	
 	router.get('/createSC', function (req, res) {
-		var sc = require('../commands/createSC')(server, "createSC");
-		sc.create( (err, result) => {
+		var sc = require('../commands/createSC')(server);
+		sc.create( (err, tokenInfos) => {
 			if (err) return res.send('Error: '+err);
-			res.send(result);
+			res.send(tokenInfos);
 		});
 	});
 	router.get('/StartSendEth', function (req, res) {
