@@ -158,23 +158,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 }
             }
 
-/*          Not yet mined transaction are already parsed in only sendTokenMode
-            // search not yet mined transaction emited by account
-            if (onlyTokenSend) {
-                var block = web3.eth.getBlock("pending", true);
-                if (block != null && block.transactions != null) {
-                    for( var t = 0 ; t < block.transactions.length; ++t) {
-                        var e = block.transactions[t];
-                        if (myaccount == e.from) {
-                            if (e.to === tokenContractInstance.address)
-                            {
-                                toSCTransactionsArray.push(e);
-                            }
-                        }
-                    }
-                }
-            }
-*/
             return [toSCTransactionsArray, fromSenderTransactionsArray];
         }
     
@@ -214,11 +197,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     ethereumReceived += nbEth.toNumber();
                     nbTokenSold += nbTokenToTransfert;
                 }
-/*              // code fail sim
-                if (Math.random() > 0.5) {
-                    return;
-                }
-*/
+
                 params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold }, function (err, instance) {
                     if (err) {
                         debug("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
@@ -267,11 +246,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
 
         function sendToken(instance) {
-/*            
-            if (Math.random() > 0.5) {
-                return;
-            }
-*/            
             tokenContractInstance.transfer(instance.EmiterWallet, instance.NbToken, function(err, thash) {
                 if (!err) {
                     web3.eth.getTransaction(thash, function(err, trans){
@@ -281,12 +255,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         }
                         else {
                             console.log("Tokens sended to: %s, transaction hash: %s", trans.to, trans.hash);
+
                             // update transaction table
-/*                            
-                            if (Math.random() > 0.5){
-                                return;
-                            }
-*/                            
                             instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": instance.NbToken / Math.pow(10, decimal) }, function (err, instance) {
                                 if (err) {
                                     debug("Error: can't update transaction table after transaction hash: %s is mined, error: %o", trans.hash, err);

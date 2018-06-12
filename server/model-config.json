@@ -38,10 +38,10 @@
   },
   "Param": {
     "dataSource": "db",
-    "public": false
+    "public": true
   },
   "transaction": {
     "dataSource": "db",
-    "public": false
+    "public": true
   }
 }

@@ -6,6 +6,7 @@ const config	= require( path.join(__dirname, '../config' + (process.env.NODE_ENV
 const Web3      = require('web3');
 const Fs        = require('fs');
 const Solc      = require('solc');
+const Async		= require("async");
 
 var mParam;
 var mTransaction;
@@ -31,6 +32,11 @@ var SmartContract = function (_server) {
 // private methods
 //---------------------------------------------------------------------------
 
+// sleep time expects milliseconds
+function sleep (ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Compile our SecureSwapToken solidity source code
  * Create ERC20 contract
@@ -39,13 +45,13 @@ var SmartContract = function (_server) {
  * @param {object} param Wallet adress of Token owner
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
  * @param {Error} err Error information
- * @param {string} tokenInfos New Token ERC20 infos object
+ * @param {string} tokenInfos New Token ERC20 infos
  *
  * @class SmartContract
  * @private
  */
-function WalletReceived(param, web3, cb) {
-	var tokenInitialOwnerAdresse = param.ICOWalletAdress;	// $$$ donc tu voulais un array, donc l'appel avec instance est faux, d'ailleurs, ça crashe... 
+async function WalletReceived(param, web3, cb) {
+	var tokenInitialOwnerAdresse = param.ICOWalletAdress;
 	console.log("Inital token owner is: ", tokenInitialOwnerAdresse);
 
 	let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
@@ -70,7 +76,7 @@ function WalletReceived(param, web3, cb) {
 	// create ERC20 contract
 	let secureswapContract = web3.eth.contract(JSON.parse(abi));
 
-	// deploy (mine) the contract
+	// deploy the contract
 	var secureswapContractInstance = secureswapContract.new(
 		{
 			from: tokenInitialOwnerAdresse,
@@ -78,15 +84,17 @@ function WalletReceived(param, web3, cb) {
 			gas: gasEstimate
 		});
 
-	// fix contract adresse not setted in test environement, not sure if happend in real node
+	// we wait for contract be mined
 	if (secureswapContractInstance.address === undefined) {
 		var transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
-		if (transactionReceipt !== undefined) {
-			secureswapContractInstance.address = transactionReceipt.contractAddress;
+		while(transactionReceipt === null) {
+			await sleep(10000);
+			transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
 		}
+		secureswapContractInstance.address = transactionReceipt.contractAddress;
 	}
 
-	if (secureswapContractInstance.transactionHash === 'undefined' || secureswapContractInstance.address === 'undefined') {
+	if (secureswapContractInstance.transactionHash === undefined || secureswapContractInstance.address === undefined) {
 		console.log("Contract not mined, contract transaction hash: %s, contract address: %s", secureswapContractInstance.transactionHash, secureswapContractInstance.address);
 		return cb("Contract not mined, contract transaction hash: " + secureswapContractInstance.transactionHash + " contract address: " + secureswapContractInstance.address, null);
 	}
@@ -130,6 +138,7 @@ SmartContract.prototype.create = function (cb) {
   console.log(config.appName + ': Creating...');
     
   var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));  
+//  var web3 = new Web3(new Web3.providers.HttpProvider("http://192.168.56.1:8545"));  
   
   // delete all transactions in transaction table
   mTransaction.destroyAll(function(err, info){
@@ -140,22 +149,20 @@ SmartContract.prototype.create = function (cb) {
 	console.log(info.count + " were destroyed from Transaction table");	
 
 	// get parameters from table Param
-	// $$$ Pourquoi mettre ces paramètres dans une base de données, plutôt que dans un simple fichier de config ?
-	//     Puisque param[0].updateAttributes() est commenté, il n'y a pas de mise à jour, donc un simple config.json serait suffisant...
 	mParam.find(function(err, param) {
 		if (err || param.length === 0){
 			console.log("Table Param empty, create default params");
-			mParam.create({ ICOWalletAdress: "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1", USDEthereumPrice: 600.0, USDTokenPrice: 0.1 }, (err, instance) => {
+			mParam.create({ ICOWalletAdress: "0xa95bb56fba11d2947c165a9702582dbb66ee34f8", USDEthereumPrice: 600.0, USDTokenPrice: 0.1 }, (err, instance) => {
 				if (err) {
 					console.log("Error occurs when adding default param in table Param error: %o", err);
 					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
 				}
-				WalletReceived(instance, web3, cb);	// $$$ ici tu passe l'instance, donc un objet
+				WalletReceived(instance, web3, cb);
 			});
 		}
 		else
 		{
-			WalletReceived(param[0], web3, cb);	// $$$ ici tu passe un array d'instances
+			WalletReceived(param[0], web3, cb);
 		}
 	});
   });  

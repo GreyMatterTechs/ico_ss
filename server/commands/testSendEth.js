@@ -33,10 +33,8 @@ TestSendEthereum.prototype.Init = function (cb) {
   // function for transfert ethereum from owner to destinatire
   function transfertEthereum(ethOwner, ethDestinataire, eth){
     try { // transfer ethereum
-//      var nonceValue = web3.eth.getTransactionCount(ethOwner);
 
       var tx = {
-//        nonce: nonceValue,
         gasPrice: '2', 
         gasLimit: '900',
         from: ethOwner,
