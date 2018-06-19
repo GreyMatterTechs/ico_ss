@@ -36,7 +36,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
     // connection to local node
     // set the provider you want from Web3.providers
-    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));  
+    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
   
     // we compile the contract source code for have the contract abi  
     let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
@@ -70,12 +70,14 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             return;
         }
         // wallet adresse & private key and contract transaction hash used for create the token
-        var ICOWalletAdresse = undefined;
+        var ICOWalletEthereumAddress = undefined;
+        var ICOWalletTokenAddress = undefined;
         if (params.length !== 0) {
-            ICOWalletAdresse = params[0].ICOWalletAdress;
-            console.log("Inital token owner is: ", ICOWalletAdresse);
+            ICOWalletEthereumAddress = params[0].ICOWalletEthereumAddress;
+            ICOWalletTokenAddress = params[0].ICOWalletTokenAddress;
+            console.log("Inital token owner is: %s, ethereum receiver: %s", ICOWalletTokenAddress, ICOWalletEthereumAddress);
         }
-        if (ICOWalletAdresse === "" || ICOWalletAdresse === undefined || ICOWalletAdresse === null) {
+        if (ICOWalletTokenAddress === "" || ICOWalletTokenAddress === undefined || ICOWalletTokenAddress === null || ICOWalletEthereumAddress === "" || ICOWalletEthereumAddress === undefined || ICOWalletEthereumAddress === null) {
             debug("Wallet for initial token owner not defined !");
             console.log("Wallet for initial token owner not defined !");
             return;
@@ -87,7 +89,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             console.log("Token smart contract transaction hash not defined !");
             return;
         }
-        web3.eth.defaultAccount = ICOWalletAdresse;
+        web3.eth.defaultAccount = ICOWalletTokenAddress;
         var ethereumPrice = params[0].USDEthereumPrice;
         var tokenPriceUSD = params[0].USDTokenPrice;
         var tokenPriceEth = tokenPriceUSD / ethereumPrice;
@@ -350,7 +352,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             lastBlock = startBlock;
         }
 
-        var balance = tokenContractInstance.balanceOf(ICOWalletAdresse);
+        var balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
         var adjustedBalance = balance / Math.pow(10, decimal);
         var nbTokenSold = totalToken - adjustedBalance;;
 
@@ -369,10 +371,38 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }, 1000)
         }
 
+        function transfertEthereum(ethOwner, ethDestinataire, eth){
+            try { // transfer ethereum
+                var tx = {
+                    gasPrice: '21000', 
+                    gasLimit: '900000',
+                    from: ethOwner,
+                    to: ethDestinataire, 
+                    value: eth
+                }
+        
+                web3.eth.sendTransaction(tx, function(err, transactionHash){
+                    if (!err){
+                    console.log("--- secure ethereum transaction %s submited!", transactionHash);
+                    }
+                    else{
+                    console.log("*** secure ethereum erreur %o", err);
+                    return;
+                    }
+                });
+                console.log("Secure Ethereum by sending transaction from %s to %s for %f ether", ethOwner, ethDestinataire, web3.fromWei(eth, "ether").toNumber());
+            }
+            catch(err){
+              console.log(err);}
+            finally{
+              console.log('-----------------------------------------------------------------------------------');
+            }
+        }
+
         function IntervalProcess(procTrans, checkMode)
         {
             if (cronStarted) {
-                balance = tokenContractInstance.balanceOf(ICOWalletAdresse);
+                balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
                 adjustedBalance = balance / Math.pow(10, decimal);
                 
                 if (checkMode) {
@@ -393,15 +423,15 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         console.log("Check transactions from block %d to block %d", startBlock, lastBlock);
 
                         // get transaction of account toAdresse from block startBlock to lastBlock
-                        var transactionsER = getTransactionsOfAccount(ICOWalletAdresse, startBlock, lastBlock, false);
-                        var transactionsR = getTransactionsOfAccount(ICOWalletAdresse, lastBlock + 1, web3.eth.blockNumber, true);
+                        var transactionsER = getTransactionsOfAccount(ICOWalletTokenAddress, startBlock, lastBlock, false);
+                        var transactionsR = getTransactionsOfAccount(ICOWalletTokenAddress, lastBlock + 1, web3.eth.blockNumber, true);
                         var transactions = [];
                         transactions.push(transactionsER[0].concat(transactionsR[0]));
                         transactions.push(transactionsER[1].concat(transactionsR[1]));
 
                         checkTransaction(transactions[1], transactions[0], procTrans, tokenContractInstance);
                         console.log("Check transaction process finished!")
-                        balance = tokenContractInstance.balanceOf(ICOWalletAdresse);
+                        balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
                         adjustedBalance = balance / Math.pow(10, decimal);
                         console.log("After correction: ICO Etherum received: %f, token left to sell: %f", ethereumReceived.toFixed(6), adjustedBalance - (totalToken - totalTokenToSend));
                         cronStarted = false;
@@ -417,7 +447,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             lastBlock = Math.min(newLastBlock - NbBlockTransactionConfirmation, lastBlock + 100);
 
                             // get transaction of account toAdresse from block startBlock to lastBlock
-                            var transactions = getTransactionsOfAccount(ICOWalletAdresse, startBlock, lastBlock, false);
+                            var transactions = getTransactionsOfAccount(ICOWalletTokenAddress, startBlock, lastBlock, false);
                             startBlock = lastBlock + 1;
 
                             // display transaction received
@@ -435,6 +465,13 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                                     console.log("error: Unable to update LastProcessedBlock: %O", err);
                                 }
                             });        
+
+                            if (ICOWalletTokenAddress !== ICOWalletEthereumAddress) {
+                                var ethAmount = Math.floor(web3.fromWei(web3.eth.getBalance(ICOWalletTokenAddress), "ether"));
+                                if (ethAmount > 0) {
+                                    transfertEthereum(ICOWalletTokenAddress, ICOWalletEthereumAddress, web3.toBigNumber(web3.toWei(ethAmount, "ether")));
+                                }
+                            }
                         }
                     }
                 }

@@ -51,8 +51,8 @@ function sleep (ms) {
  * @private
  */
 async function WalletReceived(param, web3, cb) {
-	var tokenInitialOwnerAdresse = param.ICOWalletAdress;
-	console.log("Inital token owner is: ", tokenInitialOwnerAdresse);
+	var tokenInitialOwnerAddress = param.ICOWalletTokenAddress;
+	console.log("Inital token owner is: ", tokenInitialOwnerAddress);
 
 	let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
 	let compiledContract = Solc.compile(source, 1);
@@ -79,7 +79,7 @@ async function WalletReceived(param, web3, cb) {
 	// deploy the contract
 	var secureswapContractInstance = secureswapContract.new(
 		{
-			from: tokenInitialOwnerAdresse,
+			from: tokenInitialOwnerAddress,
 			data: bytecode,
 			gas: gasEstimate
 		});
@@ -99,11 +99,11 @@ async function WalletReceived(param, web3, cb) {
 		return cb("Contract not mined, contract transaction hash: " + secureswapContractInstance.transactionHash + " contract address: " + secureswapContractInstance.address, null);
 	}
 
-	console.log("Contract Mined !, contract transaction hash: %s, contract adresse: %s", secureswapContractInstance.transactionHash, secureswapContractInstance.address);
+	console.log("Contract Mined !, contract transaction hash: %s, contract address: %s", secureswapContractInstance.transactionHash, secureswapContractInstance.address);
 
 	var tokenContractInterface = web3.eth.contract(secureswapContractInstance.abi).at(secureswapContractInstance.address);
 	var decimal = tokenContractInterface.decimals();
-	var balance = tokenContractInterface.balanceOf(tokenInitialOwnerAdresse);
+	var balance = tokenContractInterface.balanceOf(tokenInitialOwnerAddress);
 	var adjustedBalance = balance / Math.pow(10, decimal);
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
@@ -137,7 +137,7 @@ async function WalletReceived(param, web3, cb) {
 SmartContract.prototype.create = function (cb) {
   console.log(config.appName + ': Creating...');
     
-  var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));  
+  var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
 //  var web3 = new Web3(new Web3.providers.HttpProvider("http://192.168.56.1:8545"));  
   
   // delete all transactions in transaction table
@@ -152,7 +152,7 @@ SmartContract.prototype.create = function (cb) {
 	mParam.find(function(err, param) {
 		if (err || param.length === 0){
 			console.log("Table Param empty, create default params");
-			mParam.create({ ICOWalletAdress: "0xa95bb56fba11d2947c165a9702582dbb66ee34f8", USDEthereumPrice: 600.0, USDTokenPrice: 0.1 }, (err, instance) => {
+			mParam.create({ ICOWalletTokenAddress: "0x3e747d49be38cc69573a6aed7631430547b1bdda", ICOWalletEthereumAddress: "0x3e747d49be38cc69573a6aed7631430547b1bdda", USDEthereumPrice: 600.0, USDTokenPrice: 0.1 }, (err, instance) => {
 				if (err) {
 					console.log("Error occurs when adding default param in table Param error: %o", err);
 					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);

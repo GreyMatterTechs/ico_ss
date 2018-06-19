@@ -7,9 +7,13 @@
     "validateUpsert": true
   },
   "properties": {
-    "ICOWalletAdress": {
+    "ICOWalletTokenAddress": {
       "type": "string",
       "required": true
+  },
+  "ICOWalletEthereumAddress": {
+    "type": "string",
+    "required": true
   },
   "TokenContractTransactionHash": {
     "type": "string",
