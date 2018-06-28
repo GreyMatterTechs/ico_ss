@@ -90,13 +90,15 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             return;
         }
         web3.eth.defaultAccount = ICOWalletTokenAddress;
-        var ethereumPrice = params[0].USDEthereumPrice;
-        var tokenPriceUSD = params[0].USDTokenPrice;
-        var tokenPriceEth = tokenPriceUSD / ethereumPrice;
+        var ethereumPrice = web3.toBigNumber(params[0].USDEthereumPrice);
+        var tokenPriceUSD = web3.toBigNumber(params[0].USDTokenPrice);
+        var tokenPriceEth = tokenPriceUSD.dividedBy(ethereumPrice);
+        var transactionGaz = params[0].TransactionGaz;
+        var gazPrice = web3.toWei(params[0].GazPice,'gwei');
 
-        if (tokenPriceEth.isNaN || tokenPriceEth === 0) {
-            debug("Token price not correctly defined !, Etherum USD Price: " + ethereumPrice + "Token USD price: " + tokenPriceUSD, null);
-            console.log("Token price not correctly defined !, Etherum USD Price: " + ethereumPrice + "Token USD price: " + tokenPriceUSD, null);
+        if (tokenPriceEth.toNumber() === 0) {
+            debug("Token price not correctly defined !, Etherum USD Price: " + ethereumPrice.toNumber() + "Token USD price: " + tokenPriceUSD.toNumber(), null);
+            console.log("Token price not correctly defined !, Etherum USD Price: " + ethereumPrice.toNumber() + "Token USD price: " + tokenPriceUSD.toNumber(), null);
             return;
         }
 
@@ -145,13 +147,13 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     for( var t = 0 ; t < block.transactions.length; ++t) {
                         var e = block.transactions[t];
                         // account is the receip of transaction
-                        if (myaccount == e.to && onlyTokenSend === false) {
+                        if (e.to !== null && myaccount.toLowerCase() === e.to.toLowerCase() && onlyTokenSend === false) {
                             fromSenderTransactionsArray.push(e);
                         }
                         
                         // account is emiter of transaction
-                        if (myaccount == e.from) {
-                            if (e.to === tokenContractInstance.address)
+                        if (myaccount.toLowerCase() == e.from.toLowerCase()) {
+                            if (e.to !== null && e.to.toLowerCase() === tokenContractInstance.address.toLowerCase())
                             {
                                 toSCTransactionsArray.push(e);
                             }
@@ -191,13 +193,13 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             Async.forEach(notProcessedTrans, function(e) {
                 var nbEth = web3.fromWei(e.value, 'ether');
                 console.log(" received: %f Eth from %s, tx hash: %s", nbEth.toFixed(8), e.from, e.hash);
-                var nbTokenToTransfert = nbEth / tokenPriceEth;
-                var nbTokenUnitToTransfert = nbTokenToTransfert * Math.pow(10, decimal);
-                console.log(" -> Send: %f SSWT to %s", nbTokenToTransfert.toFixed(8), e.from);
+                var nbTokenToTransfert = nbEth.dividedBy(tokenPriceEth);
+                var nbTokenUnitToTransfert = nbTokenToTransfert.times(Math.pow(10, decimal));
+                console.log(" -> Send: %f SSWT to %s", nbTokenToTransfert.toNumber().toFixed(8), e.from);
 
                 if (!missingToken) {
                     ethereumReceived += nbEth.toNumber();
-                    nbTokenSold += nbTokenToTransfert;
+                    nbTokenSold += nbTokenToTransfert.toNumber();
                 }
 
                 params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold }, function (err, instance) {
@@ -209,34 +211,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                 if(!missingToken){
                     // add transaction in table
-                    mTransaction.create({ EmiterWallet: e.from, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: e.hash, NonceIn: e.nonce, NbEthereum: nbEth, NbToken: nbTokenUnitToTransfert }, (err, instance) => {
-                        if (err) {
-                            debug("Error occurs when adding transaction in table(for input transaction hash: %s) error: %o", e.hash, err);
-                            console.log("Error occurs when adding transaction in table(for input transaction hash: %s) error: %o", e.hash, err);
-                        }
-                        else
-                        {
-                            sendToken(instance);
-                        }
-                    })
+                    mTransaction.create({ EmiterWallet: e.from, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: e.hash, NonceIn: e.nonce, NbEthereum: nbEth, NbToken: nbTokenUnitToTransfert }, transCreateCB.bind(null, nbTokenUnitToTransfert));
                 }
-                else{
-                    mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, function(err, instances) {
-                        if (err) {
-                            debug("Error occurs when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
-                            console.log("Error occurs when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
-                        }
-                        else
-                        {
-                            if (instances.length != 1) {
-                                debug("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send", e.hash);
-                                console.log("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send", e.hash);
-                            }
-                            else {
-                                sendToken(instances[0]);
-                            }
-                        }
-                    })
+                else {
+                    mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, transUpdateCB.bind(null, nbTokenUnitToTransfert));
                 }
             }, function(err) {
                 if(err)
@@ -247,8 +225,36 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             });
         }
 
-        function sendToken(instance) {
-            tokenContractInstance.transfer(instance.EmiterWallet, instance.NbToken, function(err, thash) {
+        function transCreateCB(nbToken, err, instance) {
+            if (err) {
+                debug("Error occurs when adding transaction in table(for input transaction hash: %s) error: %o", e.hash, err);
+                console.log("Error occurs when adding transaction in table(for input transaction hash: %s) error: %o", e.hash, err);
+            }
+            else
+            {
+                sendToken(instance, nbToken);
+            }
+        }
+
+        function transUpdateCB(nbToken, err, instances) {
+            if (err) {
+                debug("Error occurs when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
+                console.log("Error occurs when find transaction in table(for input transaction hash: %s) for mising token send, error: %o", e.hash, err);
+            }
+            else
+            {
+                if (instances.length != 1) {
+                    debug("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send", e.hash);
+                    console.log("Many instance found (%d) when find transaction in table(for input transaction hash: %s) for mising token send", e.hash);
+                }
+                else {
+                    sendToken(instances[0], nbToken);
+                }
+            }
+        }
+
+        function sendToken(instance, nbToken) {
+            tokenContractInstance.transfer(instance.EmiterWallet, nbToken, {gas: transactionGaz, gasPrice: gazPrice}, function(err, thash) {
                 if (!err) {
                     web3.eth.getTransaction(thash, function(err, trans){
                         if(err){
@@ -259,7 +265,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             console.log("Tokens sended to: %s, transaction hash: %s", trans.to, trans.hash);
 
                             // update transaction table
-                            instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": instance.NbToken / Math.pow(10, decimal) }, function (err, instance) {
+                            instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": nbToken.dividedBy(Math.pow(10, decimal)).toNumber() }, function (err, instance) {
                                 if (err) {
                                     debug("Error: can't update transaction table after transaction hash: %s is mined, error: %o", trans.hash, err);
                                     console.log("Error: can't update transaction table after transaction hash: %s is mined, error: %o", trans.hash, err);
@@ -269,7 +275,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     })
                 }
                 else {
-                    console.log("send token to wallet %s for %f tokens from input transaction %s error: %o", instance.EmiterWallet, instance.NbToken, instance.InTransactionHash, err);
+                    console.log("send token to wallet %s for %f tokens from input transaction %s error: %o", instance.EmiterWallet, nbToken.dividedBy(Math.pow(10, decimal)).toNumber(), instance.InTransactionHash, err);
                 }
             })
 
@@ -281,11 +287,18 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             // On selectione toutes les transactions de reception d'ethereum qui ont été detectées
             var InTableTransactionIn = bcTransIn.filter(bcTin => missingTransactionIn.every(mti => !(mti.from === bcTin.from && mti.hash === bcTin.hash)));
             // on selectione toutes les transaction de reception d'ethereum detectées qui n'ont pas de transaction d'emmissions de token renseignées
-            var missingTokenInfo = InTableTransactionIn.filter(bcTin => procTrans.some(pT => (pT.EmiterWallet === bcTin.from && pT.InTransactionHash == bcTin.hash && pT.NonceIn === bcTin.nonce && pT.OutTransactionHash === undefined)));
+//            var missingTokenInfo = InTableTransactionIn.filter(bcTin => procTrans.some(pT => (pT.EmiterWallet === bcTin.from && pT.InTransactionHash == bcTin.hash && pT.NonceIn === bcTin.nonce && pT.OutTransactionHash === undefined)));
             // on selectione toutes les transactions d'emission de token qui ne sont pas renseignées dans la table (OutTransactionHash non renseignée)
             var missingTransOutInTable = bcTransOut.filter(function(value){
                 const decodedData = abiDecoder.decodeMethod(value.input);
                 return procTrans.every(pT => !(pT.EmiterWallet === decodedData.params[0].value && pT.OutTransactionHash == value.hash));
+            });
+
+            // on check les transaction receipt de chaqu etransaction d'envois de token
+            bcTransOut.forEach(function(t){
+                const decodedData = abiDecoder.decodeMethod(t.input);
+                var transactionReceipt = web3.eth.getTransactionReceipt(t.hash);
+                console.log("Decoded data %o   transaction Receipt: %o", decodedData, transactionReceipt);
             });
 
             // on match les transaction de token emises qui ne sont pas dans la table mais sont sur la blockchain (transaction d'envois de token emise mais non renseignées en table)
@@ -371,11 +384,11 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }, 1000)
         }
 
-        function transfertEthereum(ethOwner, ethDestinataire, eth){
+       function transfertEthereum(ethOwner, ethDestinataire, eth){
             try { // transfer ethereum
                 var tx = {
-                    gasPrice: '21000', 
-                    gasLimit: '900000',
+                    gas: 24000,
+                    gasPrice: web3.toWei(40,'gwei'),
                     from: ethOwner,
                     to: ethDestinataire, 
                     value: eth
@@ -383,10 +396,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         
                 web3.eth.sendTransaction(tx, function(err, transactionHash){
                     if (!err){
-                    console.log("--- secure ethereum transaction %s submited!", transactionHash);
+                        console.log("--- secure ethereum transaction %s submited!", transactionHash);
                     }
                     else{
-                    console.log("*** secure ethereum erreur %o", err);
+                        console.log("*** secure ethereum erreur %o", err);
                     return;
                     }
                 });

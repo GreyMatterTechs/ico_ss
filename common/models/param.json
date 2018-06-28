@@ -15,6 +15,14 @@
     "type": "string",
     "required": true
   },
+  "TransactionGaz": {
+    "type": "number",
+    "required": false
+  },
+  "GazPice": {
+    "type": "number",
+    "required": false
+  },
   "TokenContractTransactionHash": {
     "type": "string",
     "required": false
