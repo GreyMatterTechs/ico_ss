@@ -83,7 +83,7 @@ TestSendEthereum.prototype.Init = function (cb) {
       if (cronStarted) {
         for (var i = 3; i < web3.eth.accounts.length; ++i) {
           if (Math.random() > 0.5){
-            var amount = web3.eth.getBalance(web3.eth.accounts[i]) / 1000;
+            var amount = web3.eth.getBalance(web3.eth.accounts[i]) / 100;
             transfertEthereum(web3.eth.accounts[i], ICOWalletAddress, web3.toBigNumber((Math.random() * web3.eth.getBalance(web3.eth.accounts[i]) / 1000)));
           }
         }
@@ -93,7 +93,7 @@ TestSendEthereum.prototype.Init = function (cb) {
           clearInterval(cron);
         }
       }
-    }, 2000);
+    }, 20000);
   }
 };
 

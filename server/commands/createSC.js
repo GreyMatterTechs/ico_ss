@@ -152,8 +152,8 @@ SmartContract.prototype.create = function (cb) {
 	mParam.find(function(err, param) {
 		if (err || param.length === 0){
 			console.log("Table Param empty, create default params");
-//			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44 }, (err, instance) => {
-			mParam.create({ ICOWalletTokenAddress: "0xd2764c270d769d16683428d6bcde800d00957367", ICOWalletEthereumAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 60000, GazPice: 60}, (err, instance) => {
+			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44 }, (err, instance) => {
+//			mParam.create({ ICOWalletTokenAddress: "0xd2764c270d769d16683428d6bcde800d00957367", ICOWalletEthereumAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 60000, GazPice: 60}, (err, instance) => {
 				if (err) {
 					console.log("Error occurs when adding default param in table Param error: %o", err);
 					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);

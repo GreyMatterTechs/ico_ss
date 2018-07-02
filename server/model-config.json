@@ -43,5 +43,9 @@
   "transaction": {
     "dataSource": "db",
     "public": true
+  },
+  "ParamBackup": {
+    "dataSource": "db",
+    "public": true
   }
 }

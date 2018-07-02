@@ -66,7 +66,6 @@ module.exports = function(server) {
 		next();
 	});
 
-
 	// ------------------------------------------------
 	// Install a `/` route that returns server status
 	// ------------------------------------------------
@@ -78,7 +77,6 @@ module.exports = function(server) {
 		});
 	});
 	
-
 	// ------------------------------------------------
 	// create and deplay smart contract
 	// ------------------------------------------------
@@ -90,6 +88,11 @@ module.exports = function(server) {
 			res.send(tokenInfos);
 		});
 	});
+
+	// ------------------------------------------------
+	// start ethereum send for tests
+	// ------------------------------------------------
+
 	router.get('/StartSendEth', function (req, res) {
 		var se = require('../commands/testSendEth')(server, "testSendEth");
 		se.StartSend( (err, result) => {
@@ -97,6 +100,11 @@ module.exports = function(server) {
 			res.send(result);
 		});
 	});
+
+	// ------------------------------------------------
+	// stop ethereum send for tests
+	// ------------------------------------------------
+
 	router.get('/StopSendEth', function (req, res) {
 		var se = require('../commands/testSendEth')(server, "testSendEth");
 		se.StopSend( (err, result) => {
@@ -136,6 +144,18 @@ module.exports = function(server) {
 	router.get('/CheckAndFix', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.CheckAndFix( (err, result) => {
+			if (err) return res.send('Error: '+err);
+			res.send(result);
+		});
+	});
+
+	// ------------------------------------------------
+	// backup params
+	// ------------------------------------------------
+	
+	router.get('/BackupParams', function (req, res) {
+		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
+		de.BackupParams( (err, result) => {
 			if (err) return res.send('Error: '+err);
 			res.send(result);
 		});

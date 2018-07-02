@@ -1,6 +1,5 @@
 {
-  "name": "Param",
-  "plural": "Params",
+  "name": "ParamBackup",
   "base": "PersistedModel",
   "idInjection": true,
   "options": {
@@ -52,8 +51,8 @@
       "required": false
     },
     "LastProcessedBlock": {
-      "type": "number",
-      "required": false
+        "type": "number",
+        "required": false
     },
     "BlockTokenStart": {
       "type": "number",

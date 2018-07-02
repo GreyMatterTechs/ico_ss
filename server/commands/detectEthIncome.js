@@ -12,6 +12,7 @@ const config	= require( path.join(__dirname, '../config' + (process.env.NODE_ENV
 
 var appname;
 var mParam;
+var mParamBackup;
 var mTransaction;
 
 var cronStarted = false;
@@ -28,6 +29,7 @@ var cron;
 var DetectEthereumIncome = function (_server, _appname) {
     appname = _appname;
     mParam = _server.models.Param;
+    mParamBackup = _server.models.ParamBackup;
     mTransaction = _server.models.transaction;
 };
 
@@ -387,8 +389,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
        function transfertEthereum(ethOwner, ethDestinataire, eth){
             try { // transfer ethereum
                 var tx = {
-                    gas: 24000,
-                    gasPrice: web3.toWei(40,'gwei'),
+                    gas: transactionGaz,
+                    gasPrice: gazPrice,
                     from: ethOwner,
                     to: ethDestinataire, 
                     value: eth
@@ -493,6 +495,29 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
     }
 }
 
+DetectEthereumIncome.prototype.ParamBackup = function (cb) {
+    console.log(appname + ': Init Backup Params table...');
+
+	// get parameters from table Param
+	mParam.find(function(err, param) {
+		if (err || param.length === 0) {
+			    console.log("Table Param empty, backup can't be done!");
+		}
+		else
+		{
+            mParamBackup.create({ ICOWalletTokenAddress: param[0].ICOWalletTokenAddress, ICOWalletEthereumAddress: param[0].ICOWalletEthereumAddress, TransactionGaz: param[0].TransactionGaz, 
+                GazPice: param[0].GazPice, TokenContractTransactionHash: param[0].TokenContractTransactionHash, NbTokenToSell: param[0].NbTokenToSell, NbTotalToken: param[0].NbTotalToken, 
+                USDTokenPrice: param[0].USDTokenPrice, USDEthereumPrice: param[0].USDEthereumPrice, NbTokenSold: param[0].NbTokenSold, NbEthereum: param[0].NbEthereum, LastProcessedBlock: param[0].LastProcessedBlock, 
+                BlockTokenStart: param[0].BlockTokenStart, NbBlockTransactionConfirmation: param[0].NbBlockTransactionConfirmation}, (err, instance) => {
+                if (err) {
+                    console.log("Error occurs when backup table Param error: %o", err);
+                    return cb("Error occurs when backup table Param error: " + JSON.stringify(err), null);
+                }
+            });
+		}
+	});
+}
+
 /* ------ Module export ----------- */
 module.exports = function (_server, _appname) {
     if (detectEthereumIncomeInstance === null)
@@ -515,9 +540,9 @@ DetectEthereumIncome.prototype.StartSendToken = function(cb) {
     else{
       return cb("Send token cron started already started!", null); 
     }
-  };
+};
   
-  DetectEthereumIncome.prototype.StopSendToken = function (cb) {
+DetectEthereumIncome.prototype.StopSendToken = function (cb) {
     if (cronStarted) {
       cronStarted = false;
       return cb(null, "Send token cron stoped!"); 
@@ -526,9 +551,9 @@ DetectEthereumIncome.prototype.StartSendToken = function(cb) {
     {
       return cb("Send token cron not started!", null); 
     }
-  }
+}
   
-  DetectEthereumIncome.prototype.CheckAndFix = function (cb) {
+DetectEthereumIncome.prototype.CheckAndFix = function (cb) {
     if(initCalled)
     {
         cronStarted = false;
@@ -538,4 +563,9 @@ DetectEthereumIncome.prototype.StartSendToken = function(cb) {
   
     cronStarted = true;
     return cb(null, "CheckAndFix transaction started!"); 
+}
+
+DetectEthereumIncome.prototype.BackupParams = function (cb) {
+    detectEthereumIncomeInstance.ParamBackup(cb);
+    return cb(null, "Backup params table!"); 
 }
