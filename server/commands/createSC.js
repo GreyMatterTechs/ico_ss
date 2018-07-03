@@ -109,7 +109,7 @@ async function WalletReceived(param, web3, cb) {
 	var tokenSymbol = tokenContractInterface.symbol();
 
 	param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 70000000, 
-							  "USDTokenPrice": 0.1, "USDEthereumPrice": 600, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
+							  "USDTokenPrice": 0.45, "USDEthereumPrice": 350, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
 		if (err) {
 			return cb(err, null);
 		}
