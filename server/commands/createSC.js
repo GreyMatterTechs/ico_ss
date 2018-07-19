@@ -108,8 +108,17 @@ async function WalletReceived(param, web3, cb) {
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
 
+	var ethereumPrice = 450;
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.open( "GET", "https://api.coinmarketcap.com/v2/ticker/1027/?convert=EUR", false ); // false for synchronous request
+	xmlHttp.send( null );
+	if(xmlHttp.responseText) {
+		let rep = JSON.parse(xmlHttp.responseText);
+		ethereumPrice = rep.data.quotes.USD.price;
+	}
+
 	param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 70000000, 
-							  "USDTokenPrice": 0.45, "USDEthereumPrice": 350, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
+							  "USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
 		if (err) {
 			return cb(err, null);
 		}

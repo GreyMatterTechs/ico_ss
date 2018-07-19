@@ -192,6 +192,15 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         function sendTokenForTransaction(transactions, tokenContractInstance, procTrans, missingToken){
             var notProcessedTrans = transactions.filter(item => procTrans.every(cItem => !(cItem.EmiterWallet === item.from && cItem.InTransactionHash === item.hash)));
 
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "GET", "https://api.coinmarketcap.com/v2/ticker/1027/?convert=EUR", false ); // false for synchronous request
+            xmlHttp.send( null );
+            if(xmlHttp.responseText) {
+                let rep = JSON.parse(xmlHttp.responseText);
+                ethereumPrice = web3.toBigNumber(rep.data.quotes.USD.price);
+            }
+            tokenPriceEth = tokenPriceUSD.dividedBy(ethereumPrice);
+
             Async.forEach(notProcessedTrans, function(e) {
                 var nbEth = web3.fromWei(e.value, 'ether');
                 console.log(" received: %f Eth from %s, tx hash: %s", nbEth.toFixed(8), e.from, e.hash);
@@ -204,7 +213,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     nbTokenSold += nbTokenToTransfert.toNumber();
                 }
 
-                params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold }, function (err, instance) {
+                params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold, "USDEthereumPrice": ethereumPrice.toNumber() }, function (err, instance) {
                     if (err) {
                         debug("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
                         console.log("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
