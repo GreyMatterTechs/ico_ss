@@ -9,6 +9,7 @@ const Async		= require("async");
 const path		= require('path');
 const debug		= require('debug')('ico_ss:DetectEthereumIncome');
 const config	= require( path.join(__dirname, '../config' + (process.env.NODE_ENV!=='development' ? ('.'+process.env.NODE_ENV) : '') + '.json') );
+const request   = require('superagent');
 
 var appname;
 var mParam;
@@ -192,47 +193,61 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         function sendTokenForTransaction(transactions, tokenContractInstance, procTrans, missingToken){
             var notProcessedTrans = transactions.filter(item => procTrans.every(cItem => !(cItem.EmiterWallet === item.from && cItem.InTransactionHash === item.hash)));
 
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.open( "GET", "https://api.coinmarketcap.com/v2/ticker/1027/?convert=EUR", false ); // false for synchronous request
-            xmlHttp.send( null );
-            if(xmlHttp.responseText) {
-                let rep = JSON.parse(xmlHttp.responseText);
-                ethereumPrice = web3.toBigNumber(rep.data.quotes.USD.price);
-            }
-            tokenPriceEth = tokenPriceUSD.dividedBy(ethereumPrice);
-
-            Async.forEach(notProcessedTrans, function(e) {
-                var nbEth = web3.fromWei(e.value, 'ether');
-                console.log(" received: %f Eth from %s, tx hash: %s", nbEth.toFixed(8), e.from, e.hash);
-                var nbTokenToTransfert = nbEth.dividedBy(tokenPriceEth);
-                var nbTokenUnitToTransfert = nbTokenToTransfert.times(Math.pow(10, decimal));
-                console.log(" -> Send: %f SSWT to %s", nbTokenToTransfert.toNumber().toFixed(8), e.from);
-
-                if (!missingToken) {
-                    ethereumReceived += nbEth.toNumber();
-                    nbTokenSold += nbTokenToTransfert.toNumber();
-                }
-
-                params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold, "USDEthereumPrice": ethereumPrice.toNumber() }, function (err, instance) {
-                    if (err) {
-                        debug("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
-                        console.log("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
-                    }
-                });        
-
-                if(!missingToken){
-                    // add transaction in table
-                    mTransaction.create({ EmiterWallet: e.from, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: e.hash, NonceIn: e.nonce, NbEthereum: nbEth, NbToken: nbTokenUnitToTransfert }, transCreateCB.bind(null, nbTokenUnitToTransfert));
-                }
-                else {
-                    mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, transUpdateCB.bind(null, nbTokenUnitToTransfert));
-                }
-            }, function(err) {
-                if(err)
+            getCoinMarketCapId("Ethereum", (err, id) => {
+                if (id === null || id === -1)
                 {
-                    debug("Error %o occurs during async.forEach for sendTokenForTransaction", err);
-                    console.log("Error %o occurs during async.forEach for sendTokenForTransaction", err);
+                    id = 1027;
                 }
+        
+                getCotation(id, (err, cotation) => {
+                    if (cotation) {
+                        ethereumPrice = web3.toBigNumber(cotation.data.quotes.USD.price);
+                        tokenPriceEth = tokenPriceUSD.dividedBy(ethereumPrice);
+                    }
+
+                    Async.forEach(notProcessedTrans, function(e) {
+                        var nbEth = web3.fromWei(e.value, 'ether');
+                        console.log(" received: %f Eth from %s, tx hash: %s", nbEth.toFixed(8), e.from, e.hash);
+                        var nbTokenToTransfert = nbEth.dividedBy(tokenPriceEth);
+                        var nbTokenUnitToTransfert = nbTokenToTransfert.times(Math.pow(10, decimal));
+                        console.log(" -> Send: %f SSWT to %s", nbTokenToTransfert.toNumber().toFixed(8), e.from);
+
+                        if (!missingToken) {
+                            ethereumReceived += nbEth.toNumber();
+                            nbTokenSold += nbTokenToTransfert.toNumber();
+                        }
+
+                        params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold, "USDEthereumPrice": ethereumPrice.toNumber() }, function (err, instance) {
+                            if (err) {
+                                debug("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
+                                console.log("error: Unable to update NbEthereum/NbTokenSold of Param table: %O", err);
+                            }
+                        });        
+
+                        var paramsUpdated = {
+                            ethReceived:  nbEth,
+                            ethTotal:  ethereumReceived,
+                            tokensSold:  nbTokenSold
+                        }
+                        sendParams('sswp', 's', 'setReceivedEth', paramsUpdated, (err, responseTxt) => {
+                            if (err) return err;
+                        });
+
+                        if(!missingToken){
+                            // add transaction in table
+                            mTransaction.create({ EmiterWallet: e.from, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: e.hash, NonceIn: e.nonce, NbEthereum: nbEth, NbToken: nbTokenUnitToTransfert }, transCreateCB.bind(null, nbTokenUnitToTransfert));
+                        }
+                        else {
+                            mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, transUpdateCB.bind(null, nbTokenUnitToTransfert));
+                        }
+                    }, function(err) {
+                        if(err)
+                        {
+                            debug("Error %o occurs during async.forEach for sendTokenForTransaction", err);
+                            console.log("Error %o occurs during async.forEach for sendTokenForTransaction", err);
+                        }
+                    });
+                });
             });
         }
 
@@ -283,13 +298,17 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                                 }
                             })
                         }
+
+                        var walletToken = tokenContractInstance.balanceOf(instance.EmiterWallet);
+                        var adjustedBalance = walletToken.dividedBy(Math.pow(10, decimal)).toNumber();
+                        console.log("Wallet %s contains %d Tokens", instance.EmiterWallet, adjustedBalance);
+        
                     })
                 }
                 else {
                     console.log("send token to wallet %s for %f tokens from input transaction %s error: %o", instance.EmiterWallet, nbToken.dividedBy(Math.pow(10, decimal)).toNumber(), instance.InTransactionHash, err);
                 }
             })
-
         }
 
         function checkTransaction(bcTransIn , bcTransOut, procTrans, tokenContractInstance){
@@ -297,8 +316,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             var missingTransactionIn = bcTransIn.filter(bcTin => procTrans.every(pT => !(pT.EmiterWallet === bcTin.from && pT.InTransactionHash === bcTin.hash)));
             // On selectione toutes les transactions de reception d'ethereum qui ont été detectées
             var InTableTransactionIn = bcTransIn.filter(bcTin => missingTransactionIn.every(mti => !(mti.from === bcTin.from && mti.hash === bcTin.hash)));
-            // on selectione toutes les transaction de reception d'ethereum detectées qui n'ont pas de transaction d'emmissions de token renseignées
-//            var missingTokenInfo = InTableTransactionIn.filter(bcTin => procTrans.some(pT => (pT.EmiterWallet === bcTin.from && pT.InTransactionHash == bcTin.hash && pT.NonceIn === bcTin.nonce && pT.OutTransactionHash === undefined)));
             // on selectione toutes les transactions d'emission de token qui ne sont pas renseignées dans la table (OutTransactionHash non renseignée)
             var missingTransOutInTable = bcTransOut.filter(function(value){
                 const decodedData = abiDecoder.decodeMethod(value.input);
@@ -356,6 +373,93 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }
         }
 
+        /**
+        * Récupère la cotation d'une crypto sur CoinMarketCap, en USD et en EUR
+        */
+       
+        function getCotation(cryptoId, cb) {
+            var url = 'https://api.coinmarketcap.com/v2/ticker/' + cryptoId + '/?convert=EUR';
+            request
+            .get(url)
+            .query({convert: 'EUR'})
+            .end((err, res) => {
+                if (err) return cb(err, null);
+                if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+                    return cb(null, JSON.parse(res.text));
+                } else {
+                    return cb('request() error. url:' + url, null);
+                }
+            });
+        }
+
+        /**
+        * Get crypto CoinMarketCap id
+        */
+        function getCoinMarketCapId(cryptoName, cb) {
+            var url = 'https://api.coinmarketcap.com/v2/listings/';
+            request
+            .get(url)
+            .end((err, res) => {
+                if (err) return cb(err, null);
+                if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+                    var rep = JSON.parse(res.text);
+                    var id = -1;
+                    rep.data.forEach(function(element) {
+                        if (element.name === cryptoName)
+                        {
+                            id = Number(element.id);
+                        }
+                    });
+                    return cb(null, id);
+                } else {
+                    return cb('request() error. url:' + url, null);
+                }
+            });
+        }
+
+        /**
+         * Get a valid token
+         */
+        function login(login, pass, cb) {
+            const url = 'http://localhost:3000/login';
+            request
+            .post(url)
+            .send({username: login, password: pass})
+            .end((err, res) => {
+                if (err) return cb(err);
+                if (res.body && !res.error && res.statusCode===200) {
+                    return cb(null, res.body.accessToken);
+                } else {
+                    return cb('request() error. url:' + url, null);
+                }
+            });
+        }
+   
+        /**
+         * Send data on public website API
+         */
+        function sendParams(log, pass, api, params, cb) {
+            // first : login and get a valid token
+            login(log, pass, (err, tokenId) => {
+                // second : send data
+                const url = 'http://localhost:3000/api/ICOs/' + api;
+                request
+                .post(url)
+                .send({tokenId: tokenId, params: params})
+                .end((err, res) => {
+                    if (err) return cb(err);
+/*
+                    if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+                        return cb(null, JSON.parse(res.text));
+                    }
+                    else {
+                        return cb('request() error. url:' + url, null);
+                    }
+*/			
+                });
+            });
+        }
+
         // inits for blockchain scan
         var startBlock = 0;
         var lastBlock = 0;
@@ -377,7 +481,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
 
         var balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
-        var adjustedBalance = balance / Math.pow(10, decimal);
+        var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
         var nbTokenSold = totalToken - adjustedBalance;;
 
         mTransaction.find(function(err, procTrans) {
@@ -438,63 +542,58 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                 if (adjustedBalance <= (totalToken - totalTokenToSend) && checkMode == false) {
                     console.log("ICO hard cap reached !, token left: %f, Ethereum gain: %f", adjustedBalance, ethereumReceived.toFixed(6) );
+                }
+                if (checkMode) {
+                    console.log("Check transactions from block %d to block %d", startBlock, lastBlock);
+
+                    // get transaction of account toAdresse from block startBlock to lastBlock
+                    var transactionsER = getTransactionsOfAccount(ICOWalletTokenAddress, startBlock, lastBlock, false);
+                    var transactionsR = getTransactionsOfAccount(ICOWalletTokenAddress, lastBlock + 1, web3.eth.blockNumber, true);
+                    var transactions = [];
+                    transactions.push(transactionsER[0].concat(transactionsR[0]));
+                    transactions.push(transactionsER[1].concat(transactionsR[1]));
+
+                    checkTransaction(transactions[1], transactions[0], procTrans, tokenContractInstance);
+                    console.log("Check transaction process finished!")
+                    balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
+                    adjustedBalance = balance / Math.pow(10, decimal);
+                    console.log("After correction: ICO Etherum received: %f, token left to sell: %f", ethereumReceived.toFixed(6), adjustedBalance - (totalToken - totalTokenToSend));
                     cronStarted = false;
                     clearInterval(cron);
                     initCalled = false;
                 }
                 else {
-                    if (checkMode) {
-                        console.log("Check transactions from block %d to block %d", startBlock, lastBlock);
+                    var newLastBlock = web3.eth.blockNumber;
+                    console.log("new blocks: %d, nb confirmation block: %d", newLastBlock - lastBlock, NbBlockTransactionConfirmation);
+
+                    if ( (newLastBlock - NbBlockTransactionConfirmation) > lastBlock)
+                    {
+                        lastBlock = Math.min(newLastBlock - NbBlockTransactionConfirmation, lastBlock + 100);
 
                         // get transaction of account toAdresse from block startBlock to lastBlock
-                        var transactionsER = getTransactionsOfAccount(ICOWalletTokenAddress, startBlock, lastBlock, false);
-                        var transactionsR = getTransactionsOfAccount(ICOWalletTokenAddress, lastBlock + 1, web3.eth.blockNumber, true);
-                        var transactions = [];
-                        transactions.push(transactionsER[0].concat(transactionsR[0]));
-                        transactions.push(transactionsER[1].concat(transactionsR[1]));
+                        var transactions = getTransactionsOfAccount(ICOWalletTokenAddress, startBlock, lastBlock, false);
+                        startBlock = lastBlock + 1;
 
-                        checkTransaction(transactions[1], transactions[0], procTrans, tokenContractInstance);
-                        console.log("Check transaction process finished!")
-                        balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
-                        adjustedBalance = balance / Math.pow(10, decimal);
-                        console.log("After correction: ICO Etherum received: %f, token left to sell: %f", ethereumReceived.toFixed(6), adjustedBalance - (totalToken - totalTokenToSend));
-                        cronStarted = false;
-                        clearInterval(cron);
-                        initCalled = false;
-                    }
-                    else {
-                        var newLastBlock = web3.eth.blockNumber;
-                        console.log("new blocks: %d, nb confirmation block: %d", newLastBlock - lastBlock, NbBlockTransactionConfirmation);
+                        // display transaction received
+                        console.log("Reception Eth Transaction: %d, Sent token transaction: %d", transactions[1].length, transactions[0].length);
+                        displayTransactionTo(transactions[1]);
+                        console.log("============================================================================");
+                        displayTransactionFrom(transactions[0])
 
-                        if ( (newLastBlock - NbBlockTransactionConfirmation) > lastBlock)
-                        {
-                            lastBlock = Math.min(newLastBlock - NbBlockTransactionConfirmation, lastBlock + 100);
+                        // Send token to investors
+                        sendTokenForTransaction(transactions[1], tokenContractInstance, procTrans, false);
 
-                            // get transaction of account toAdresse from block startBlock to lastBlock
-                            var transactions = getTransactionsOfAccount(ICOWalletTokenAddress, startBlock, lastBlock, false);
-                            startBlock = lastBlock + 1;
+                        params[0].updateAttributes( { "LastProcessedBlock" : lastBlock }, function (err, instance) {
+                            if (err) {
+                                debug("error: Unable to update LastProcessedBlock: %O", err);
+                                console.log("error: Unable to update LastProcessedBlock: %O", err);
+                            }
+                        });        
 
-                            // display transaction received
-                            console.log("Reception Eth Transaction: %d, Sent token transaction: %d", transactions[1].length, transactions[0].length);
-                            displayTransactionTo(transactions[1]);
-                            console.log("============================================================================");
-                            displayTransactionFrom(transactions[0])
-
-                            // Send token to investors
-                            sendTokenForTransaction(transactions[1], tokenContractInstance, procTrans, false);
-
-                            params[0].updateAttributes( { "LastProcessedBlock" : lastBlock }, function (err, instance) {
-                                if (err) {
-                                    debug("error: Unable to update LastProcessedBlock: %O", err);
-                                    console.log("error: Unable to update LastProcessedBlock: %O", err);
-                                }
-                            });        
-
-                            if (ICOWalletTokenAddress !== ICOWalletEthereumAddress) {
-                                var ethAmount = Math.floor(web3.fromWei(web3.eth.getBalance(ICOWalletTokenAddress), "ether"));
-                                if (ethAmount > 0) {
-                                    transfertEthereum(ICOWalletTokenAddress, ICOWalletEthereumAddress, web3.toBigNumber(web3.toWei(ethAmount, "ether")));
-                                }
+                        if (ICOWalletTokenAddress !== ICOWalletEthereumAddress) {
+                            var ethAmount = Math.floor(web3.fromWei(web3.eth.getBalance(ICOWalletTokenAddress), "ether"));
+                            if (ethAmount > 0) {
+                                transfertEthereum(ICOWalletTokenAddress, ICOWalletEthereumAddress, web3.toBigNumber(web3.toWei(ethAmount, "ether")));
                             }
                         }
                     }

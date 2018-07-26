@@ -36,7 +36,7 @@ TestSendEthereum.prototype.Init = function (cb) {
 
       var tx = {
         gas: 21000,
-        gasPrice: web3.toWei(40,'gwei'),
+        gasPrice: web3.toWei(6,'gwei'),
         from: ethOwner,
         to: ethDestinataire, 
         value: eth
@@ -82,17 +82,17 @@ TestSendEthereum.prototype.Init = function (cb) {
     var cron = setInterval(function() {
       if (cronStarted) {
         for (var i = 3; i < web3.eth.accounts.length; ++i) {
-          if (Math.random() > 0.5){
-            transfertEthereum(web3.eth.accounts[i], ICOWalletAddress, web3.toBigNumber((Math.random() * web3.eth.getBalance(web3.eth.accounts[i]) / 100)));
+          if (Math.random() > 0.15){
+            transfertEthereum(web3.eth.accounts[i], ICOWalletAddress, web3.toBigNumber((Math.random() * web3.eth.getBalance(web3.eth.accounts[i]) / 5)));
           }
         }
         count += 1;
-        if (count >= 1000)
+        if (count >= 10000)
         {
           clearInterval(cron);
         }
       }
-    }, 20000);
+    }, 30000);
   }
 };
 

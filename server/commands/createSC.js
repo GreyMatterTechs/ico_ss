@@ -7,6 +7,7 @@ const Web3      = require('web3');
 const Fs        = require('fs');
 const Solc      = require('solc');
 const Async		= require("async");
+const request   = require('superagent');
 
 var mParam;
 var mTransaction;
@@ -107,25 +108,140 @@ async function WalletReceived(param, web3, cb) {
 	var adjustedBalance = balance / Math.pow(10, decimal);
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
+	var ethereumPrice = 475;
 
-	var ethereumPrice = 450;
-	var xmlHttp = new XMLHttpRequest();
-	xmlHttp.open( "GET", "https://api.coinmarketcap.com/v2/ticker/1027/?convert=EUR", false ); // false for synchronous request
-	xmlHttp.send( null );
-	if(xmlHttp.responseText) {
-		let rep = JSON.parse(xmlHttp.responseText);
-		ethereumPrice = rep.data.quotes.USD.price;
-	}
-
-	param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 70000000, 
-							  "USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
-		if (err) {
-			return cb(err, null);
+	getCoinMarketCapId("Ethereum", (err, id) => {
+		if (id === null || id === -1)
+		{
+			console.log("Can't read Ethereum Id on CoinMarketCap, use id 1027 by default");
+			id = 1027;
 		}
-		console.log("New Token ERC20 infos: TokenName: %s, TokenSymbol: %s, Decimal: %d, Token owner balance: %d", tokenName, tokenSymbol, decimal.toNumber(), adjustedBalance);
-		return cb(null, "New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance);
-	});        
+
+		getCotation(id, (err, cotation) => {
+			if (cotation) {
+				ethereumPrice = Number(cotation.data.quotes.USD.price);
+				console.log("Ethereum cotation on CoinMarketCap is: %d", ethereumPrice);
+			}
+			else
+			{
+				console.log("Can't read Ethereum cotation on CoinMarketCap, use old value: %d", ethereumPrice);
+			}
+
+			param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 80000000, 
+									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
+				if (err) {
+					return cb(err, null);
+				}
+				console.log("New Token ERC20 infos: TokenName: %s, TokenSymbol: %s, Decimal: %d, Token owner balance: %d", tokenName, tokenSymbol, decimal.toNumber(), adjustedBalance);
+				return cb(null, "New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance);
+			});
+
+			var tokenPriceUSD = web3.toBigNumber(0.45);
+			var tokenPriceETH = tokenPriceUSD.dividedBy(ethereumPrice);
+
+			/**
+			 * Send ICO params to website
+			 */
+			const params = {
+				wallet:			tokenInitialOwnerAddress,
+				tokenName:  	"SSWT",
+				tokenPriceUSD:	tokenPriceUSD.toNumber(),
+				tokenPriceETH:	tokenPriceETH.toNumber(),
+				softCap:		10000000,
+				hardCap:  		80000000,
+				tokensTotal:  	100000000,
+				ethTotal:   	0,
+				tokensSold:  	0,
+				dateStart:   	new Date("2018-07-27T00:00:00.000Z"),
+				dateEnd:  		new Date("2018-12-31T00:00:00.000Z")
+			}
+
+			sendParams("sswp", "s", "setParams", params, (err, responseTxt) => {
+				if (err) return err;
+			});
+		});
+	});
 }
+
+/**
+* Get crypto quote on CoinMarketCap, in USD and in EUR
+*/
+function getCotation(cryptoId, cb) {
+	var url = 'https://api.coinmarketcap.com/v2/ticker/' + cryptoId + '/?convert=EUR';
+	request
+	.get(url)
+	.query({convert: 'EUR'})
+	.end((err, res) => {
+		if (err) return cb(err, null);
+		if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+			return cb(null, JSON.parse(res.text));
+		} else {
+			return cb('request() error. url:' + url, null);
+		}
+	});
+}
+
+/**
+* Get crypto CoinMarketCap id
+*/
+function getCoinMarketCapId(cryptoName, cb) {
+	var url = 'https://api.coinmarketcap.com/v2/listings/';
+	request
+	.get(url)
+	.end((err, res) => {
+		if (err) return cb(err, null);
+		if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+			var rep = JSON.parse(res.text);
+			var id = -1;
+			rep.data.forEach(function(element) {
+				if (element.name === cryptoName)
+				{
+					id = Number(element.id);
+				}
+			});
+			return cb(null, id);
+		} else {
+			return cb('request() error. url:' + url, null);
+		}
+	});
+}
+
+/**
+ * Get a valid token
+ */
+function login(login, pass, cb) {
+	const url = 'http://localhost:3000/login';
+	request
+	.post(url)
+	.send({username: login, password: pass})
+	.end((err, res) => {
+		if (err) return cb(err);
+		if (res.body && !res.error && res.statusCode===200) {
+			return cb(null, res.body.accessToken);
+		} else {
+			return cb('request() error. url:' + url, null);
+		}
+	});
+}
+
+/**
+ * Send data on public website API
+ */
+function sendParams(log, pass, api, params, cb) {
+	// first : login and get a valid token
+	login(log, pass, (err, tokenId) => {
+		// second : send data
+		const url = 'http://localhost:3000/api/ICOs/' + api;
+		request
+		.post(url)
+		.send({tokenId: tokenId, params: params})
+		.end((err, res) => {
+			if (err) return cb(err);
+			return cb(null, true);
+		});
+	});
+}
+
 
 /**
  * Public methods
@@ -147,7 +263,6 @@ SmartContract.prototype.create = function (cb) {
   console.log(config.appName + ': Creating...');
     
   var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
-//  var web3 = new Web3(new Web3.providers.HttpProvider("http://192.168.56.1:8545"));  
   
   // delete all transactions in transaction table
   mTransaction.destroyAll(function(err, info){
@@ -161,8 +276,8 @@ SmartContract.prototype.create = function (cb) {
 	mParam.find(function(err, param) {
 		if (err || param.length === 0){
 			console.log("Table Param empty, create default params");
-			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44 }, (err, instance) => {
-//			mParam.create({ ICOWalletTokenAddress: "0xd2764c270d769d16683428d6bcde800d00957367", ICOWalletEthereumAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 60000, GazPice: 60}, (err, instance) => {
+			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6 }, (err, instance) => {
+//			mParam.create({ ICOWalletTokenAddress: "0xd2764c270d769d16683428d6bcde800d00957367", ICOWalletEthereumAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6}, (err, instance) => {
 				if (err) {
 					console.log("Error occurs when adding default param in table Param error: %o", err);
 					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
