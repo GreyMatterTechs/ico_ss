@@ -1,9 +1,9 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.18;
 
 // ERC Token Standard #20 Interface
 interface ERC20 {
     // Get the total token supply
-    //function totalSupply() view external returns (uint256 totalSupply);
+    function totalSupply() view external returns (uint256 ts);
     // Get the account balance of another account with address _owner
     function balanceOf(address _owner) view external returns (uint256 balance);
     // Send _value amount of tokens to address _to
@@ -22,10 +22,46 @@ interface ERC20 {
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 }
 
+// Owned contract
+contract Owned {
+    address private _ContractOwner = address(0);
+    address private _NewOwner = address(0);
+
+    event OwnershipTransferred(address indexed _from, address indexed _to);
+
+    constructor() public{
+        intialOwner(msg.sender);
+    }
+
+    modifier onlyOwner{
+        require(msg.sender == _ContractOwner);
+        _;
+    }
+
+    function intialOwner(address own) private{
+        _ContractOwner = own;
+    }
+
+    function getContractOwner() public view returns(address){
+        return _ContractOwner;
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner{
+        _NewOwner = newOwner;
+    }
+
+    function acceptOwnership() public {
+        require(msg.sender == _NewOwner);
+        emit OwnershipTransferred(_ContractOwner, _NewOwner);
+        _ContractOwner = _NewOwner;
+        _NewOwner = address(0);
+    }
+}
+
 // ERC20 Token Smart contract
-contract SecureSwapToken is ERC20 {
+contract SecureSwapToken is ERC20, Owned{
     string public name = "SecureSwap";
-    string public symbol = "SSWT";
+    string public symbol = "SSW";
     uint8 public decimals = 18;
     uint256 private _totalSupply = 100000000000000000000000000; // 100 000 000 . 000 000 ...
 
@@ -36,7 +72,8 @@ contract SecureSwapToken is ERC20 {
 
     // Constructor
     constructor() public{
-        balances[msg.sender] = balances[msg.sender] + _totalSupply;
+        balances[msg.sender] = _totalSupply;
+        emit Transfer(address(0), msg.sender, _totalSupply);
     }
 
     function totalSupply() view public returns(uint256){
@@ -64,12 +101,15 @@ contract SecureSwapToken is ERC20 {
     // deliberately authorized the sender of the message via some mechanism; we propose
     // these standardized APIs for approval:
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success){
-        require(allowed[_from][msg.sender] >= _value && balances[_from] >= _value && _value > 0);
-        balances[_from] = balances[_from] - _value;
-        balances[_to] = balances[_to] + _value;
-        allowed[_from][msg.sender] = allowed[_from][msg.sender] - _value;
-        emit Transfer(_from, _to, _value);
-        return true;
+        if (msg.sender == getContractOwner() || _from != getContractOwner()){
+            require(allowed[_from][msg.sender] >= _value && balances[_from] >= _value && _value > 0);
+            balances[_from] = balances[_from] - _value;
+            balances[_to] = balances[_to] + _value;
+            allowed[_from][msg.sender] = allowed[_from][msg.sender] - _value;
+            emit Transfer(_from, _to, _value);
+            return true;
+        }
+        return false;
     }
     
     // Allow _spender to withdraw from your account, multiple times, up to the _value amount.
@@ -84,7 +124,22 @@ contract SecureSwapToken is ERC20 {
     function allowance(address _owner, address _spender) view public returns(uint256){
         return allowed[_owner][_spender];
     }
-    
+  
+    function kill(address recipient) public onlyOwner returns(bool){
+        selfdestruct(recipient);
+        return true;
+    }
+
+    // Don't accept ETH
+    function () public payable {
+        revert();
+    }
+
+    // Owner can transfer out any accidentally sent ERC20 tokens
+    function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {
+        return ERC20(tokenAddress).transfer(getContractOwner(), tokens);
+    }
+
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 }

@@ -98,6 +98,15 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var tokenPriceEth = tokenPriceUSD.dividedBy(ethereumPrice);
         var transactionGaz = params[0].TransactionGaz;
         var gazPrice = web3.toWei(params[0].GazPice,'gwei');
+        var icoState = 1;
+        if (params[0].dateStart < new Date().toUTCString())
+        {
+            icoState += 1;
+        }
+        if (params[0].dateEnd < new Date().toUTCString())
+        {
+            icoState += 1;
+        }
 
         if (tokenPriceEth.toNumber() === 0) {
             debug("Token price not correctly defined !, Etherum USD Price: " + ethereumPrice.toNumber() + "Token USD price: " + tokenPriceUSD.toNumber(), null);
@@ -124,6 +133,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
 
         var decimal = tokenContractInstance.decimals();
+
+        icoState = 2;
+        sendParams('sswp', 's', 'setState', icoState, (err, responseTxt) => {
+        });
 
         // get all transactions of an account (*from*/to) between start and end block
         function getTransactionsOfAccount(myaccount, startBlockNumber, endBlockNumber, onlyTokenSend) {
@@ -225,9 +238,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         });        
 
                         var paramsUpdated = {
-                            ethReceived:  nbEth,
-                            ethTotal:  ethereumReceived,
-                            tokensSold:  nbTokenSold
+                            state:          icoState,
+                            ethReceived:    nbEth,
+                            ethTotal:       ethereumReceived,
+                            tokensSold:     nbTokenSold
                         }
                         sendParams('sswp', 's', 'setReceivedEth', paramsUpdated, (err, responseTxt) => {
                             if (err) return err;
@@ -541,6 +555,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 }
 
                 if (adjustedBalance <= (totalToken - totalTokenToSend) && checkMode == false) {
+                    icoState = 3;
+                    sendParams('sswp', 's', 'setState', icoState, (err, responseTxt) => {
+                    });
+
                     console.log("ICO hard cap reached !, token left: %f, Ethereum gain: %f", adjustedBalance, ethereumReceived.toFixed(6) );
                 }
                 if (checkMode) {

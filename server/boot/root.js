@@ -82,10 +82,14 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	
 	router.get('/createSC', function (req, res) {
-		var sc = require('../commands/createSC')(server);
-		sc.create( (err, tokenInfos) => {
+		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
+		de.BackupParams( (err, result) => {
 			if (err) return res.send('Error: '+err);
-			res.send(tokenInfos);
+			var sc = require('../commands/createSC')(server);
+			sc.create( (err, tokenInfos) => {
+				if (err) return res.send('Error: '+err);
+				res.send(tokenInfos);
+			});
 		});
 	});
 
@@ -117,7 +121,7 @@ module.exports = function(server) {
 	// start token send for ethereum received
 	// ------------------------------------------------
 	
-	router.get('/SendTokenStart', function (req, res) {
+	router.get('/StartTokenSend', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.StartSendToken( (err, result) => {
 			if (err) return res.send('Error: '+err);
@@ -129,7 +133,7 @@ module.exports = function(server) {
 	// stop token send for ethereum received
 	// ------------------------------------------------
 	
-	router.get('/SendTokenStop', function (req, res) {
+	router.get('/StopTokenSend', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.StopSendToken( (err, result) => {
 			if (err) return res.send('Error: '+err);
@@ -156,6 +160,18 @@ module.exports = function(server) {
 	router.get('/BackupParams', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.BackupParams( (err, result) => {
+			if (err) return res.send('Error: '+err);
+			res.send(result);
+		});
+	});
+
+	// ------------------------------------------------
+	// kill smart contract
+	// ------------------------------------------------
+	
+	router.get('/killSC', function (req, res) {
+		var sc = require('../commands/KillContract')(server, "KillContract");
+		sc.kill( (err, result) => {
 			if (err) return res.send('Error: '+err);
 			res.send(result);
 		});
