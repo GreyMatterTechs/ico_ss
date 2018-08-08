@@ -1,7 +1,7 @@
 'use strict';
 
 const path      = require('path');
-const debug     = require('debug')('ico_ss:sc');
+const logger 	= reqlocal('/server/boot/winston.js').logger;
 const config	= require( path.join(__dirname, '../config' + (process.env.NODE_ENV!=='development' ? ('.'+process.env.NODE_ENV) : '') + '.json') );
 const Web3      = require('web3');
 const Fs        = require('fs');
@@ -53,13 +53,12 @@ function sleep (ms) {
  */
 async function WalletReceived(param, web3, cb) {
 	var tokenInitialOwnerAddress = param.ICOWalletTokenAddress;
-	console.log("Inital token owner is: ", tokenInitialOwnerAddress);
+	logger.info("Inital token owner is: ", tokenInitialOwnerAddress);
 
 	let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
 	let compiledContract = Solc.compile(source, 1);
 	if (compiledContract.errors !== undefined) {
-        debug("Error or warning during contract compilation: %o", compiledContract.errors);
-		console.log("Error or warning during contract compilation: " + compiledContract.errors);
+        logger.error("Error or warning during contract compilation: " + JSON.stringify(compiledContract.errors));
 		return cb("Error or warning during contract compilation: " + JSON.stringify(compiledContract.errors), null);
 	}
 
@@ -68,11 +67,10 @@ async function WalletReceived(param, web3, cb) {
 	let gasEstimate = web3.eth.estimateGas({ data: bytecode });
 
 	let formatedAbi = JSON.parse(abi);
-	console.log("contract compiled, abi: %o gasEstimated: %d\n", formatedAbi, gasEstimate);
-	debug("contract compiled, abi: %o gasEstimated: %d\n", formatedAbi, gasEstimate);
+	logger.info("contract compiled, abi: " + JSON.stringify(formatedAbi) + " gasEstimated: " + gasEstimate + "\n");
 
 	// create ERC20 contract
-	let secureswapContract = web3.eth.contract(JSON.parse(abi));
+	let secureswapContract = web3.eth.contract(formatedAbi);
 
 	// deploy the contract
 	var secureswapContractInstance = secureswapContract.new(
@@ -93,12 +91,11 @@ async function WalletReceived(param, web3, cb) {
 	}
 
 	if (secureswapContractInstance.transactionHash === undefined || secureswapContractInstance.address === undefined) {
-		debug("Contract not mined, contract transaction hash: %s, contract address: %s", secureswapContractInstance.transactionHash, secureswapContractInstance.address);
-		console.log("Contract not mined, contract transaction hash: %s, contract address: %s", secureswapContractInstance.transactionHash, secureswapContractInstance.address);
+		logger.error("Contract not mined, contract transaction hash: " + secureswapContractInstance.transactionHash + " contract address: " + secureswapContractInstance.address);
 		return cb("Contract not mined, contract transaction hash: " + secureswapContractInstance.transactionHash + " contract address: " + secureswapContractInstance.address, null);
 	}
 
-	console.log("Contract Mined !, contract transaction hash: %s, contract address: %s", secureswapContractInstance.transactionHash, secureswapContractInstance.address);
+	logger.info("Contract Mined !, contract transaction hash: " + secureswapContractInstance.transactionHash + " contract address: " + secureswapContractInstance.address);
 
 	var tokenContractInterface = web3.eth.contract(secureswapContractInstance.abi).at(secureswapContractInstance.address);
 	var decimal = tokenContractInterface.decimals();
@@ -111,30 +108,28 @@ async function WalletReceived(param, web3, cb) {
 	getCoinMarketCapId("Ethereum", (err, id) => {
 		if (id === null || id === -1)
 		{
-			debug("Can't read Ethereum Id on CoinMarketCap, use id 1027 by default");
-			console.log("Can't read Ethereum Id on CoinMarketCap, use id 1027 by default");
+			logger.error("Can't read Ethereum Id on CoinMarketCap, use id 1027 by default");
 			id = 1027;
 		}
 
 		getCotation(id, (err, cotation) => {
 			if (cotation) {
 				ethereumPrice = Number(cotation.data.quotes.USD.price);
-				debug("Ethereum cotation on CoinMarketCap is: %d", ethereumPrice);
-				console.log("Ethereum cotation on CoinMarketCap is: %d", ethereumPrice);
+				logger.info("Ethereum cotation on CoinMarketCap is: " + ethereumPrice);
 			}
 			else
 			{
-				console.log("Can't read Ethereum cotation on CoinMarketCap, use old value: %d", ethereumPrice);
-				debug("Can't read Ethereum cotation on CoinMarketCap, use old value: %d", ethereumPrice);
+				logger.error("Can't read Ethereum cotation on CoinMarketCap, use old value: " + ethereumPrice);
 			}
 
+			// AS ajouter contract adresse dans la table
 			param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 80000000, 
 									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
 				if (err) {
+					logger.error("Can't update param.attributesfor param.id: " + param.id);
 					return cb(err, null);
 				}
-				debug("New Token ERC20 infos: TokenName: %s, TokenSymbol: %s, Decimal: %d, Token owner balance: %d", tokenName, tokenSymbol, decimal.toNumber(), adjustedBalance);
-				console.log("New Token ERC20 infos: TokenName: %s, TokenSymbol: %s, Decimal: %d, Token owner balance: %d", tokenName, tokenSymbol, decimal.toNumber(), adjustedBalance);
+				logger.info("New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance + " Token transaction block created: " + transactionReceipt.blockNumber + " TokenContractTransactionHash: " + secureswapContractInstance.transactionHash + " Contract address: " + secureswapContractInstance.address);
 				return cb(null, "New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance);
 			});
 
@@ -263,26 +258,26 @@ function sendParams(log, pass, api, params, cb) {
  * @public
  */
 SmartContract.prototype.create = function (cb) {
-  console.log(config.appName + ': Creating...');
+	logger.info(config.appName + ': Creating...');
     
   var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
   
   // delete all transactions in transaction table
   mTransaction.destroyAll(function(err, info){
 	if (err) {
-		console.log("Error occurs when cleaning Transaction table. error: %o", err);
+		logger.error("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err));
 		return cb("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err), null);
 	}
-	console.log(info.count + " were destroyed from Transaction table");	
+	logger.info(info.count + " were destroyed from Transaction table");	
 
 	// get parameters from table Param
 	mParam.find(function(err, param) {
 		if (err || param.length === 0){
-			console.log("Table Param empty, create default params");
+			logger.info("Table Param empty, create default params");
 //			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6 }, (err, instance) => {
 			mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6}, (err, instance) => {
 				if (err) {
-					console.log("Error occurs when adding default param in table Param error: %o", err);
+					logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
 					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
 				}
 				WalletReceived(instance, web3, cb);

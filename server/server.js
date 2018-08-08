@@ -1,4 +1,5 @@
 'use strict';
+global.reqlocal = require('app-root-path').require;
 
 var loopback	= require('loopback');
 var boot		= require('loopback-boot');

@@ -7,7 +7,7 @@ const Fs		= require("fs");
 const abiDecoder= require("abi-decoder");
 const Async		= require("async");
 const path		= require('path');
-const debug		= require('debug')('ico_ss:KillContract');
+const logger    = reqlocal('/server/boot/winston.js').logger;
 const config	= require( path.join(__dirname, '../config' + (process.env.NODE_ENV!=='development' ? ('.'+process.env.NODE_ENV) : '') + '.json') );
 const request   = require('superagent');
 
@@ -35,7 +35,7 @@ var KillContract = function (_server, _appname) {
 };
 
 KillContract.prototype.Init = function (cb) {
-    console.log(appname + ': Init KillContract...');
+    logger.info(appname + ': Init KillContract...');
 
     // connection to local node
     // set the provider you want from Web3.providers
@@ -46,8 +46,7 @@ KillContract.prototype.Init = function (cb) {
     let compiledContract = Solc.compile(source, 1);
     if (compiledContract.errors != undefined)
     {
-        debug("Error or warning during contract compilation: %o", compiledContract.errors);
-        console.log("Error or warning during contract compilation: %o", compiledContract.errors);
+        logger.error("Error or warning during contract compilation: " + JSON.stringify(compiledContract.errors));
         return cb("Error or warning during contract compilation: " + JSON.stringify(compiledContract.errors));
     }
   
@@ -56,9 +55,8 @@ KillContract.prototype.Init = function (cb) {
 
     mParam.find(function(err, params) {
         if (err){
-            debug("Erreur occurs when reading Param table, error: %o", err);
-            console.log("Erreur occurs when reading Param table, error: %o", err);
-            return cb("Erreur occurs when reading Param table, error: " + err, null);
+            logger.error("Erreur occurs when reading Param table, error: " + JSON.stringify(err));
+            return cb("Erreur occurs when reading Param table, error: " + JSON.stringify(err), null);
         }
         ParamsReceived(params, cb);
     });
@@ -66,15 +64,13 @@ KillContract.prototype.Init = function (cb) {
     function ParamsReceived(params, cb) {
         if (params.length === 0)
         {
-            debug("Params for smart contract not defined !");
-            console.log("Params for smart contract not defined not defined !");
+            logger.error("Params for smart contract not defined not defined !");
             return;
         }
     
         var tokenContractTransactionHash = params[0].TokenContractTransactionHash;
         if (tokenContractTransactionHash === "" || tokenContractTransactionHash === undefined) {
-            debug("Token smart contract transaction hash not defined !");
-            console.log("Token smart contract transaction hash not defined !");
+            logger.error("Token smart contract transaction hash not defined !");
             return;
         }
 
@@ -83,20 +79,19 @@ KillContract.prototype.Init = function (cb) {
         // get transaction receipt who create the token
         var transactionReceipt = web3.eth.getTransactionReceipt(tokenContractTransactionHash);
         if (transactionReceipt === null) {
-            debug("Problem with smart-contrat, transaction receipt can't be obtened, check token contract deploy on node and contrat transaction hash on Param table!");
-            console.log("Problem with smart-contrat, transaction receipt can't be obtened, check token contract deploy on node and contrat transaction hash on Param table!");
+            logger.error("Problem with smart-contrat, transaction receipt can't be obtened, check token contract deploy on node and contrat transaction hash on Param table!");
             return;
         }
 
         // get contract instance
         var tokenContractInstance = tokenContract.at(transactionReceipt.contractAddress);
         if (tokenContractInstance === null || tokenContractInstance === undefined) {
-            debug("Problem with smart-contrat, instance value can be obtened, check token contract deploy and contrat transaction hash on Param table!");
-            console.log("Problem with smart-contrat, instance value can be obtened, check token contract deploy and contrat transaction hash on Param table!");
+            logger.error("Problem with smart-contrat, instance value can be obtened, check token contract deploy and contrat transaction hash on Param table!");
             return;
         }
 
         tokenContractInstance.kill(params[0].ICOWalletTokenAddress, {from: params[0].ICOWalletTokenAddress});
+        logger.info("Smart contract Hash: " + tokenContractTransactionHash + " address: " + transactionReceipt.contractAddress + " killed!");
     }
 }
 
