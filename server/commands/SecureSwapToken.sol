@@ -3,9 +3,9 @@ pragma solidity ^0.4.18;
 // ERC Token Standard #20 Interface
 interface ERC20 {
     // Get the total token supply
-    function totalSupply() view external returns (uint256 ts);
+    function totalSupply() external view returns (uint256 ts);
     // Get the account balance of another account with address _owner
-    function balanceOf(address _owner) view external returns (uint256 balance);
+    function balanceOf(address _owner) external view returns (uint256 balance);
     // Send _value amount of tokens to address _to
     function transfer(address _to, uint256 _value) external returns (bool success);
     // Send _value amount of tokens from address _from to address _to
@@ -15,7 +15,7 @@ interface ERC20 {
     // this function is required for some DEX functionality
     function approve(address _spender, uint256 _value) external returns (bool success);
     // Returns the amount which _spender is still allowed to withdraw from _owner
-    function allowance(address _owner, address _spender) view external returns (uint256 remaining);
+    function allowance(address _owner, address _spender) external view returns (uint256 remaining);
     // Triggered when tokens are transferred.
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     // Triggered whenever approve(address _spender, uint256 _value) is called.
@@ -76,12 +76,12 @@ contract SecureSwapToken is ERC20, Owned{
         emit Transfer(address(0), msg.sender, _totalSupply);
     }
 
-    function totalSupply() view public returns(uint256){
+    function totalSupply() public view returns(uint256){
         return _totalSupply;
     }
 
     // What is the balance of a particular account?
-    function balanceOf(address _owner) view public returns(uint256){
+    function balanceOf(address _owner) public view returns(uint256){
         return balances[_owner];
     }
 
@@ -121,7 +121,7 @@ contract SecureSwapToken is ERC20, Owned{
     }
     
     // Returns the amount which _spender is still allowed to withdraw from _owner
-    function allowance(address _owner, address _spender) view public returns(uint256){
+    function allowance(address _owner, address _spender) public view returns(uint256){
         return allowed[_owner][_spender];
     }
   
