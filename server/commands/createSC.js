@@ -150,8 +150,8 @@ async function WalletReceived(param, web3, cb) {
 				tokensTotal:  	100000000,
 				ethTotal:   	0,
 				tokensSold:  	0,
-				dateStart:   	new Date("2018-07-27T00:00:00.000Z"),
-				dateEnd:  		new Date("2018-12-31T00:00:00.000Z")
+				dateStart:   	new Date("2018-08-09T00:00:00.000Z").getTime(),
+				dateEnd:  		new Date("2018-12-31T00:00:00.000Z").getTime()
 			}
 
 			sendParams("sswp", "s", "setParams", params, (err, responseTxt) => {

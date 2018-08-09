@@ -11,9 +11,10 @@
 			"program": "${workspaceFolder}\\server\\server.js",
 			//"runtimeArgs": ["--max_old_space_size=2048"],
 			"env": {
-                "NODE_ENV": "development",
+				"NODE_ENV": "development",
 				"DEBUG": "ico_ss:*"
-            }
+			},
+			"outputCapture": "std"
 		}
 	]
 }

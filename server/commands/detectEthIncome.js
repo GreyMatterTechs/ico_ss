@@ -35,7 +35,7 @@ var DetectEthereumIncome = function (_server, _appname) {
 };
 
 DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
-    logger.error(appname + ': Init DetectEthereumIncome...');
+    logger.info(appname + ': Init DetectEthereumIncome...');
 
     // connection to local node
     // set the provider you want from Web3.providers
@@ -127,7 +127,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var decimal = tokenContractInstance.decimals();
 
         icoState = 2;
-        sendParams('sswp', 's', 'setState', icoState, (err, responseTxt) => {
+        sendParams('sswp', 's', 'setState', { "state": icoState }, (err, responseTxt) => {
         });
 
         // get all transactions of an account (*from*/to) between start and end block
@@ -511,7 +511,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         logger.info("--- secure ethereum transaction " + transactionHash + " submited!");
                     }
                     else{
-                        logger.info("*** secure ethereum erreur " + JSON.stringify(err));
+                        logger.error("*** secure ethereum erreur " + JSON.stringify(err));
                     return;
                     }
                 });
@@ -535,12 +535,12 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     logger.info("Before correction: ICO Etherum received: " + ethereumReceived.toFixed(6) + ", token left to sell: " + adjustedBalance - (totalToken - totalTokenToSend));
                 }
                 else {
-                    logger.info("ICO Etherum received: " + ethereumReceived.toFixed(6) + ", token left to sell: " + adjustedBalance - (totalToken - totalTokenToSend));
+                    logger.info("ICO Etherum received: " + ethereumReceived.toFixed(6) + ", token left to sell: " + (adjustedBalance - (totalToken - totalTokenToSend)));
                 }
 
                 if (adjustedBalance <= (totalToken - totalTokenToSend) && checkMode == false) {
                     icoState = 3;
-                    sendParams('sswp', 's', 'setState', icoState, (err, responseTxt) => {});
+                    sendParams('sswp', 's', 'setState', { "state": icoState }, (err, responseTxt) => {});
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
                 }
@@ -565,7 +565,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 }
                 else {
                     var newLastBlock = web3.eth.blockNumber;
-                    logger.info("new blocks: " + newLastBlock - lastBlock + ", nb confirmation block: " + NbBlockTransactionConfirmation);
+                    logger.info("new blocks: " + (newLastBlock - lastBlock) + ", nb confirmation block: " + NbBlockTransactionConfirmation);
 
                     if ( (newLastBlock - NbBlockTransactionConfirmation) > lastBlock)
                     {
@@ -591,8 +591,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         });        
 
                         if (ICOWalletTokenAddress !== ICOWalletEthereumAddress) {
-                            var ethAmount = Math.floor(web3.fromWei(web3.eth.getBalance(ICOWalletTokenAddress), "ether"));
-                            if (ethAmount > 0) {
+                            var ethAmount = Math.floor(web3.fromWei(web3.eth.getBalance(ICOWalletTokenAddress), "ether")-0.1);
+                            if (ethAmount >= 1) {
                                 transfertEthereum(ICOWalletTokenAddress, ICOWalletEthereumAddress, web3.toBigNumber(web3.toWei(ethAmount, "ether")));
                             }
                         }
