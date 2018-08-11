@@ -76,14 +76,25 @@ TestSendEthereum.prototype.Init = function (cb) {
       return;
     }
     var ICOWalletAddress = products[0].ICOWalletTokenAddress;
+    var ICOWalletToSend = ICOWalletAddress;
     console.log("Inital token owner is: ", ICOWalletAddress);
 
     var count = 0;               
     var cron = setInterval(function() {
       if (cronStarted) {
-        for (var i = 3; i < web3.eth.accounts.length; ++i) {
+        for (var i = 5; i < web3.eth.accounts.length; ++i) {
           if (Math.random() > 0.15){
-            transfertEthereum(web3.eth.accounts[i], ICOWalletAddress, web3.toBigNumber((Math.random() * web3.eth.getBalance(web3.eth.accounts[i]) / 5)));
+            var walletToSend = Math.random() * 3;
+            if (walletToSend < 1) {
+              ICOWalletToSend = products[0].ICOWalletTokenAddress;
+            }
+            else if (walletToSend < 2) {
+              ICOWalletToSend = products[0].ICOWalletDiscount1Address;
+            }
+            else {
+              ICOWalletToSend = products[0].ICOWalletDiscount2Address;
+            }
+            transfertEthereum(web3.eth.accounts[i], ICOWalletToSend, web3.toBigNumber((Math.random() * web3.eth.getBalance(web3.eth.accounts[i]) / 5)));
           }
         }
         count += 1;

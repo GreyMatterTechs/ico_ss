@@ -10,6 +10,9 @@
     "EmiterWallet": {
       "type": "string"
     },
+    "ReceiptWallet": {
+      "type": "string"
+    },
     "DateTimeIn": {
       "type": "string"
     },
@@ -20,6 +23,9 @@
       "type": "number"
     },
     "NbEthereum": {
+      "type": "number"
+    },
+    "DiscountFactor": {
       "type": "number"
     },
     "OutTransactionHash": {

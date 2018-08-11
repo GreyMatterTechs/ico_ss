@@ -11,9 +11,17 @@
       "type": "string",
       "required": true
     },
+    "ICOWalletDiscount1Address": {
+      "type": "string",
+      "required": false
+    },
+    "ICOWalletDiscount2Address": {
+      "type": "string",
+      "required": false
+    },
     "ICOWalletEthereumAddress": {
       "type": "string",
-      "required": true
+      "required": false
     },
     "TransactionGaz": {
       "type": "number",
@@ -24,6 +32,10 @@
       "required": false
     },
     "TokenContractTransactionHash": {
+      "type": "string",
+      "required": false
+    },
+    "TokenContractAddress": {
       "type": "string",
       "required": false
     },
@@ -40,6 +52,14 @@
       "required": false
     },
     "USDEthereumPrice": {
+      "type": "number",
+      "required": false
+    },
+    "Discount1Factor": {
+      "type": "number",
+      "required": false
+    },
+    "Discount2Factor": {
       "type": "number",
       "required": false
     },
@@ -60,6 +80,14 @@
       "required": false
     },
     "NbBlockTransactionConfirmation": {
+      "type": "number",
+      "required": false
+    },
+    "IcoDateStart": {
+      "type": "number",
+      "required": false
+    },
+    "IcoDateEnd": {
       "type": "number",
       "required": false
     }

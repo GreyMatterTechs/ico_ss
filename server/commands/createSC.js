@@ -84,7 +84,7 @@ async function WalletReceived(param, web3, cb) {
 	if (secureswapContractInstance.address === undefined) {
 		var transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
 		while(transactionReceipt === null) {
-			await sleep(10000);
+			await sleep(5000);
 			transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
 		}
 		secureswapContractInstance.address = transactionReceipt.contractAddress;
@@ -104,6 +104,8 @@ async function WalletReceived(param, web3, cb) {
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
 	var ethereumPrice = 475;
+	var dateIcoStart = new Date("2018-08-09T00:00:00.000Z");
+	var dateIcoEnd = new Date("2018-12-31T00:00:00.000Z")
 
 	getCoinMarketCapId("Ethereum", (err, id) => {
 		if (id === null || id === -1)
@@ -123,8 +125,9 @@ async function WalletReceived(param, web3, cb) {
 			}
 
 			// AS ajouter contract adresse dans la table
-			param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "NbTotalToken": adjustedBalance, "NbTokenToSell": 80000000, 
-									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, "NbBlockTransactionConfirmation": 6 }, function (err, instance) {
+			param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "TokenContractAddress" : secureswapContractInstance.address, "NbTotalToken": adjustedBalance, "NbTokenToSell": 80000000, 
+									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, 
+									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dateIcoStart.getTime(), "IcoDateEnd": dateIcoEnd.getTime() }, function (err, instance) {
 				if (err) {
 					logger.error("Can't update param.attributesfor param.id: " + param.id);
 					return cb(err, null);
@@ -136,11 +139,19 @@ async function WalletReceived(param, web3, cb) {
 			var tokenPriceUSD = web3.toBigNumber(0.45);
 			var tokenPriceETH = tokenPriceUSD.dividedBy(ethereumPrice);
 
+			var stateIco = 1;
+			if (new Date(dateIcoStart).getTime() < new Date().getTime()) {
+				stateIco = 2;
+				if (new Date(dateIcoEnd).getTime() < new Date().getTime()) {
+					stateIco = 3;
+				}
+			}
+
 			/**
 			 * Send ICO params to website
 			 */
-			const params = {
-				state:			1,
+			var params = {
+				state:			stateIco,
 				wallet:			tokenInitialOwnerAddress,
 				tokenName:  	"SSW",
 				tokenPriceUSD:	tokenPriceUSD.toNumber(),
@@ -150,8 +161,8 @@ async function WalletReceived(param, web3, cb) {
 				tokensTotal:  	100000000,
 				ethTotal:   	0,
 				tokensSold:  	0,
-				dateStart:   	new Date("2018-08-09T00:00:00.000Z").getTime(),
-				dateEnd:  		new Date("2018-12-31T00:00:00.000Z").getTime()
+				dateStart:   	dateIcoStart.getTime(),
+				dateEnd:  		dateIcoEnd.getTime()
 			}
 
 			sendParams("sswp", "s", "setParams", params, (err, responseTxt) => {
@@ -275,7 +286,9 @@ SmartContract.prototype.create = function (cb) {
 		if (err || param.length === 0){
 			logger.info("Table Param empty, create default params");
 //			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6 }, (err, instance) => {
-			mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6}, (err, instance) => {
+			mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
+				ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
+													  
 				if (err) {
 					logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
 					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
