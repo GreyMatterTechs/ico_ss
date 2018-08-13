@@ -100,7 +100,7 @@ async function WalletReceived(param, web3, cb) {
 	var tokenContractInterface = web3.eth.contract(secureswapContractInstance.abi).at(secureswapContractInstance.address);
 	var decimal = tokenContractInterface.decimals();
 	var balance = tokenContractInterface.balanceOf(tokenInitialOwnerAddress);
-	var adjustedBalance = balance / Math.pow(10, decimal);
+	var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
 	var ethereumPrice = 475;
@@ -251,14 +251,12 @@ function sendParams(log, pass, api, params, cb) {
 	});
 }
 
-
 /**
  * Public methods
  */
 
 /**
  * Connect to local node,
- * Cleanup transactions
  * Creates the SecureSwap Smart Contract
  * 
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
@@ -271,38 +269,55 @@ function sendParams(log, pass, api, params, cb) {
 SmartContract.prototype.create = function (cb) {
 	logger.info(config.appName + ': Creating...');
     
-  var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
+  	var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
   
-  // delete all transactions in transaction table
-  mTransaction.destroyAll(function(err, info){
-	if (err) {
-		logger.error("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err));
-		return cb("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err), null);
-	}
-	logger.info(info.count + " were destroyed from Transaction table");	
-
 	// get parameters from table Param
-	mParam.find(function(err, param) {
-		if (err || param.length === 0){
-			logger.info("Table Param empty, create default params");
+	mParam.destroyAll(function(err, param) {
+		if (err){
+			logger.error("Error occurs when cleaning Param table. error: " + JSON.stringify(err));
+			return cb("Error occurs when cleaning param table. error: " + JSON.stringify(err), null);
+		}
+		logger.info("Table Param empty, create default params");
 //			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6 }, (err, instance) => {
-			mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
-				ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
-													  
-				if (err) {
-					logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
-					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
-				}
-				WalletReceived(instance, web3, cb);
-			});
-		}
-		else
-		{
-			WalletReceived(param[0], web3, cb);
-		}
+		mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
+			ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
+													
+			if (err) {
+				logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
+				return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
+			}
+			WalletReceived(instance, web3, cb);
+		});
 	});
-  });  
-};
+}
+
+/**
+ * Connect to local node,
+ * Cleanup transactions
+ * 
+ * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
+ * @param {Error} err Error information
+ * @param {string} tokenInfos Transaction table clean info
+ * 
+ * @class SmartContract
+ * @public
+ */
+SmartContract.prototype.cleanTransaction = function (cb) {
+	logger.info(config.appName + ': Clean Transaction...');
+    
+  	var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
+  
+	// delete all transactions in transaction table
+	mTransaction.destroyAll(function(err, info) {
+		if (err) {
+			logger.error("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err));
+			return cb("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err), null);
+		}
+		logger.info(info.count + " were destroyed from Transaction table");	
+		return cb(null, info.count + " were destroyed from Transaction table");
+	});
+}
+
 
 //---------------------------------------------------------------------------
 // Module export
@@ -315,4 +330,4 @@ SmartContract.prototype.create = function (cb) {
  */
 module.exports = function (_server) {
     return new SmartContract(_server);
-};
+}

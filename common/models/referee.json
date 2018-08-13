@@ -1,0 +1,26 @@
+{
+  "name": "Referee",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "WalletInvestor": {
+      "type": "string",
+      "required": true
+    },
+    "WalletReferee": {
+      "type": "string",
+      "required": true
+    },
+    "StartDateReferee": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": {}
+}

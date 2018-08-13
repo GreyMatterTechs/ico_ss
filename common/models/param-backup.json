@@ -72,8 +72,8 @@
       "required": false
     },
     "LastProcessedBlock": {
-        "type": "number",
-        "required": false
+      "type": "number",
+      "required": false
     },
     "BlockTokenStart": {
       "type": "number",

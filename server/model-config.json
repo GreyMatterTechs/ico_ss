@@ -47,5 +47,9 @@
   "ParamBackup": {
     "dataSource": "db",
     "public": true
+  },
+  "Referee": {
+    "dataSource": "db",
+    "public": false
   }
 }

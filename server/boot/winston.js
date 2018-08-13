@@ -1,4 +1,18 @@
+/**
+ * Module for Winston Logger related features.
+ *
+ * @module Winston
+ * @file   This file defines the Winston module.
+ *
+ * @author Philippe Aubessard
+ * @copyright Grey Matter Technologies, 2018. All Rights Reserved.
+ */
+
 'use strict';
+
+// ------------------------------------------------------------------------------------------------------
+// includes
+// ------------------------------------------------------------------------------------------------------
 
 const winston			= require('winston');
 const DailyRotateFile	= require('winston-daily-rotate-file');
@@ -6,6 +20,10 @@ const appRoot			= require('app-root-path');
 const path				= require('path');
 const moment			= require('moment');
 const config			= require(path.join(`${appRoot}`, 'server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+
+// ------------------------------------------------------------------------------------------------------
+// Private Methods
+// ------------------------------------------------------------------------------------------------------
 
 const timeFormatFn = function() {
 	return moment().format('YYYY-MM-DD HH-mm-ss');
@@ -82,4 +100,14 @@ if (process.env.DEBUG) {
 	logger.debug('The Winston debug mode is switched on.');
 }
 
+// ------------------------------------------------------------------------------------------------------
+// Exports
+// ------------------------------------------------------------------------------------------------------
+
+/**
+ * Module export
+ *
+ * @public
+ * @api public
+ */
 module.exports.logger = logger;

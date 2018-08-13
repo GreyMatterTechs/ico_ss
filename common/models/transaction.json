@@ -39,6 +39,9 @@
     },
     "DateTimeOut": {
       "type": "string"
+    },
+    "RefereeId": {
+      "type": "number"
     }
   },
   "validations": [],

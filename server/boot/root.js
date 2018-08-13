@@ -80,12 +80,11 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// create and deplay smart contract
 	// ------------------------------------------------
-	
 	router.get('/createSC', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.BackupParams( (err, result) => {
 			if (err) return res.send('Error: '+err);
-			var sc = require('../commands/createSC')(server);
+			var sc = require('../commands/createSC')(server, "createSC");
 			sc.create( (err, tokenInfos) => {
 				if (err) return res.send('Error: '+err);
 				res.send(tokenInfos);
@@ -94,9 +93,30 @@ module.exports = function(server) {
 	});
 
 	// ------------------------------------------------
+	// Clean transaction table
+	// ------------------------------------------------
+	router.get('/cleanTransaction', function (req, res) {
+		var sc = require('../commands/createSC')(server, "cleanTransaction");
+		sc.cleanTransaction( (err, tokenInfos) => {
+			if (err) return res.send('Error: '+err);
+			res.send(tokenInfos);
+		});
+	});
+
+	// ------------------------------------------------
+	// Resent emited token
+	// ------------------------------------------------
+	router.get('/ResendEmitedToken', function (req, res) {
+		var sc = require('../commands/detectEthIncome')(server, "ResendEmitedToken");
+		sc.ResendEmitedToken( (err, tokenInfos) => {
+			if (err) return res.send('Error: '+err);
+			res.send(tokenInfos);
+		});
+	});
+
+	// ------------------------------------------------
 	// start ethereum send for tests
 	// ------------------------------------------------
-
 	router.get('/StartSendEth', function (req, res) {
 		var se = require('../commands/testSendEth')(server, "testSendEth");
 		se.StartSend( (err, result) => {
@@ -108,7 +128,6 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// stop ethereum send for tests
 	// ------------------------------------------------
-
 	router.get('/StopSendEth', function (req, res) {
 		var se = require('../commands/testSendEth')(server, "testSendEth");
 		se.StopSend( (err, result) => {
@@ -120,7 +139,6 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// start token send for ethereum received
 	// ------------------------------------------------
-	
 	router.get('/StartTokenSend', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.StartSendToken( (err, result) => {
@@ -132,7 +150,6 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// stop token send for ethereum received
 	// ------------------------------------------------
-	
 	router.get('/StopTokenSend', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.StopSendToken( (err, result) => {
@@ -144,7 +161,6 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// Check transaction table with blockchaine and fix
 	// ------------------------------------------------
-	
 	router.get('/CheckAndFix', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.CheckAndFix( (err, result) => {
@@ -156,7 +172,6 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// backup params
 	// ------------------------------------------------
-	
 	router.get('/BackupParams', function (req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
 		de.BackupParams( (err, result) => {
@@ -168,7 +183,6 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// kill smart contract
 	// ------------------------------------------------
-	
 	router.get('/killSC', function (req, res) {
 		var sc = require('../commands/KillContract')(server, "KillContract");
 		sc.kill( (err, result) => {

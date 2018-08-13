@@ -15,6 +15,7 @@ var appname;
 var mParam;
 var mParamBackup;
 var mTransaction;
+var mReferee;
 
 var cronStarted = false;
 var detectEthereumIncomeInstance = null;
@@ -32,6 +33,7 @@ var DetectEthereumIncome = function (_server, _appname) {
     mParam = _server.models.Param;
     mParamBackup = _server.models.ParamBackup;
     mTransaction = _server.models.transaction;
+    mReferee = _server.models.referee;
 };
 
 DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
@@ -70,28 +72,18 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             return;
         }
         // wallet adresse & private key and contract transaction hash used for create the token
-        var ICOWalletEthereumAddress = undefined;
-        var ICOWalletTokenAddress = undefined;
-        var ICOWalletDiscount1Address = undefined;
-        var ICOWalletDiscount2Address = undefined;
-        var Discount1Factor = 1.0;
-        var Discount2Factor = 1.0;
-        var icoDateStart = undefined;
-        var icoDateEnd = undefined;
+        var ICOWalletEthereumAddress = params[0].ICOWalletEthereumAddress;
+        var ICOWalletTokenAddress = params[0].ICOWalletTokenAddress;
+        var ICOWalletDiscount1Address = params[0].ICOWalletDiscount1Address;
+        var ICOWalletDiscount2Address = params[0].ICOWalletDiscount2Address;
+        var Discount1Factor = params[0].Discount1Factor;
+        var Discount2Factor = params[0].Discount2Factor;
+        var icoDateStart = params[0].IcoDateStart;
+        var icoDateEnd = params[0].IcoDateEnd;
         var icoState = 1;
 
-        if (params.length !== 0) {
-            ICOWalletEthereumAddress = params[0].ICOWalletEthereumAddress;
-            ICOWalletTokenAddress = params[0].ICOWalletTokenAddress;
-            ICOWalletDiscount1Address = params[0].ICOWalletDiscount1Address;
-            ICOWalletDiscount2Address = params[0].ICOWalletDiscount2Address;
-            Discount1Factor = params[0].Discount1Factor;
-            Discount2Factor = params[0].Discount2Factor;
-            icoDateStart = params[0].IcoDateStart;
-            icoDateEnd = params[0].IcoDateEnd;
-    
-            logger.info("Inital token owner is: " + ICOWalletTokenAddress + " ethereum receiver: " + ICOWalletEthereumAddress + " ICOWalletDiscount1Address: " + ICOWalletDiscount1Address + " ICOWalletDiscount2Address: " + ICOWalletDiscount2Address + " Discount1Factor: " + Discount1Factor + " Discount2Factor: " + Discount2Factor, + " IcoDateStart:" + new Date(icoDateStart).toUTCString() + " IcoDateStop:" + new Date(icoDateEnd).toUTCString());
-        }
+        logger.info("Inital token owner is: " + ICOWalletTokenAddress + " ethereum receiver: " + ICOWalletEthereumAddress + " ICOWalletDiscount1Address: " + ICOWalletDiscount1Address + " ICOWalletDiscount2Address: " + ICOWalletDiscount2Address + " Discount1Factor: " + Discount1Factor + " Discount2Factor: " + Discount2Factor, + " IcoDateStart:" + new Date(icoDateStart).toUTCString() + " IcoDateStop:" + new Date(icoDateEnd).toUTCString());
+        
         if (ICOWalletTokenAddress === "" || ICOWalletTokenAddress === undefined || ICOWalletTokenAddress === null || ICOWalletEthereumAddress === "" || ICOWalletEthereumAddress === undefined || ICOWalletEthereumAddress === null || 
             ICOWalletDiscount1Address === "" || ICOWalletDiscount1Address === undefined || ICOWalletDiscount1Address === null || ICOWalletDiscount2Address === "" || ICOWalletDiscount2Address === undefined || ICOWalletDiscount2Address === null) {
             logger.error("Wallets for initial token owner not defined !");
@@ -136,8 +128,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
 
         var decimal = tokenContractInstance.decimals();
-
-        SendIcoState(icoDateStart, icoDateEnd);
 
         // get all transactions of an account (*from*/to) between start and end block
         function getTransactionsOfAccount(iCOWalletTokenAddress, iCOWalletDiscount1Address, iCOWalletDiscount2Address, startBlockNumber, endBlockNumber, onlyTokenSend) {
@@ -277,6 +267,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         else {
                             mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, transUpdateCB.bind(null, nbTokenUnitToTransfert));
                         }
+
+                        checkReferee(e);
                     }, function(err) {
                         if(err)
                         {
@@ -285,6 +277,26 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     });
                 });
             });
+        }
+
+        function checkReferee(transaction) {
+            mReferee.find( { where: { WalletInvestor: transation.from}}, processReferee.bind(null, nbTokenUnitToTransfert, transaction));
+        }
+
+        function processReferee(nbToken, transaction, err, instance) {
+            if (err) {
+                logger.error("Error occurs when find a referee in table(investor: " + e.from + ") error: " + JSON.stringify(err));
+            }
+            else
+            {
+                var dateNow = new Date();
+                var dateReferee = new Date(referee.StartDateReferee);
+                if (dateNow.getTime() > dateReferee.getTime()) {
+                    var nbtokenToReferee = nbToken.dividedBy(10);
+
+                    mTransaction.create({ EmiterWallet: referee.WalletReferee, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash + "_referee", NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferee, DiscountFactor: 0 }, transCreateCB.bind(null, nbtokenToReferee));
+                }
+            }
         }
 
         function transCreateCB(nbToken, err, instance) {
@@ -329,11 +341,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                                 }
                             })
                         }
-
-                        var walletToken = tokenContractInstance.balanceOf(instance.EmiterWallet);
-                        var adjustedBalance = walletToken.dividedBy(Math.pow(10, decimal)).toNumber();
-                        logger.info("Wallet " + instance.EmiterWallet + " contains " + adjustedBalance + " Tokens");
-        
                     })
                 }
                 else {
@@ -564,6 +571,34 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }
         }
 
+        function reSendToken(instance) {
+            var nbToken = web3.toBigNumber(instance.NbToken);
+            tokenContractInstance.transfer(instance.EmiterWallet, nbToken.multipliyedBy(Math.pow(10, decimal)), {gas: transactionGaz, gasPrice: gazPrice}, function(err, thash) {
+                if (!err) {
+                    web3.eth.getTransaction(thash, function(err, trans) {
+                        if(err){
+                            logger.error("Error: web3.eth.getTransaction() return an error after send/deploy transaction (transaction hash: " + thash + ") error: " + JSON.stringify(err));
+                        }
+                        else {
+                            logger.info("Tokens sended to: " + trans.to + " transaction hash: " + trans.hash);
+
+                            mTransaction.create({ EmiterWallet: instance.from, DateTimeIn: instance.DateTimeIn, InTransactionHash: instance.InTransactionHash, NonceIn: instance.NonceIn, NbEthereum: instance.NbEthereum, NbToken: instance.NbToken, DiscountFactor: instance.DiscountFactor }, function(err, instance) {
+                                // update transaction table
+                                instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": instance.NbToken }, function (err, instance) {
+                                    if (err) {
+                                        logger.error("Error: can't update transaction table after transaction hash: " + trans.hash + " is mined, error: " + JSON.stringify(err));
+                                    }
+                                })
+                            });
+                        }
+                    }.bind(null, instance))
+                }
+                else {
+                    logger.info("reSend token to wallet " + instance.EmiterWallet + " for " + instance.NbToken + " tokens from input transaction " + instance.InTransactionHash + " error: " + JSON.stringify(err));
+                }
+            }.bind(null, instance))
+        }
+
         function IntervalProcess(procTrans, checkMode)
         {
             if (cronStarted) {
@@ -587,26 +622,30 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     SendIcoState(icoDateStart, icoDateEnd);
                 }
 
-                if (checkMode) {
-                    logger.info("Check transactions from block " + startBlock + " to block " + lastBlock);
-
-                    // get transaction of account toAdresse from block startBlock to lastBlock
-                    var transactionsER = getTransactionsOfAccount(ICOWalletTokenAddress, ICOWalletDiscount1Address, ICOWalletDiscount2Address, startBlock, lastBlock, false);
-                    var transactionsR = getTransactionsOfAccount(ICOWalletTokenAddress, ICOWalletDiscount1Address, ICOWalletDiscount2Address, lastBlock + 1, web3.eth.blockNumber, true);
-                    var transactions = [];
-                    transactions.push(transactionsER[0].concat(transactionsR[0]));
-                    transactions.push(transactionsER[1].concat(transactionsR[1]));
-
-                    checkTransaction(transactions[1], transactions[0], procTrans, tokenContractInstance);
-                    logger.info("Check transaction process finished!")
-                    balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
-                    adjustedBalance = balance / Math.pow(10, decimal);
-                    logger.info("After correction: ICO Etherum received: %f, token left to sell: %f", ethereumReceived.toFixed(6), adjustedBalance - (totalToken - totalTokenToSend));
-                    cronStarted = false;
-                    clearInterval(cron);
-                    initCalled = false;
+                /**
+                 * Send ICO params to website
+                 */
+                var Webparams = {
+                    state:			icoState,
+                    wallet:			ICOWalletTokenAddress,
+                    tokenName:  	"SSW",
+                    tokenPriceUSD:	tokenPriceUSD.toNumber(),
+                    tokenPriceETH:	tokenPriceEth.toNumber(),
+                    softCap:		10000000,
+                    hardCap:  		80000000,
+                    tokensTotal:  	100000000,
+                    ethTotal:   	params[0].NbEthereum,
+                    tokensSold:  	params[0].NbTokenSold,
+                    dateStart:   	icoDateStart,
+                    dateEnd:  		icoDateEnd
                 }
-                else {
+    
+                sendParams("sswp", "s", "setParams", Webparams, (err, responseTxt) => {
+                    if (err) return err;
+                });
+
+                // Process blockchain block
+                if (checkMode === 0) {
                     var newLastBlock = web3.eth.blockNumber;
                     logger.info("new blocks: " + (newLastBlock - lastBlock) + ", nb confirmation block: " + NbBlockTransactionConfirmation);
 
@@ -640,6 +679,43 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         checkNeedTransfertEthereum(ICOWalletDiscount1Address, ICOWalletEthereumAddress);
                         checkNeedTransfertEthereum(ICOWalletDiscount2Address, ICOWalletEthereumAddress);
                     }
+                }
+                // Check all BlockChaine blocks vs transaction table for found missing or interrupted transactions
+                else if (checkMode === 1) {
+                    logger.info("Check transactions from block " + startBlock + " to block " + lastBlock);
+
+                    // get transaction of account toAdresse from block startBlock to lastBlock
+                    var transactionsER = getTransactionsOfAccount(ICOWalletTokenAddress, ICOWalletDiscount1Address, ICOWalletDiscount2Address, startBlock, lastBlock, false);
+                    var transactionsR = getTransactionsOfAccount(ICOWalletTokenAddress, ICOWalletDiscount1Address, ICOWalletDiscount2Address, lastBlock + 1, web3.eth.blockNumber, true);
+                    var transactions = [];
+                    transactions.push(transactionsER[0].concat(transactionsR[0]));
+                    transactions.push(transactionsER[1].concat(transactionsR[1]));
+
+                    checkTransaction(transactions[1], transactions[0], procTrans, tokenContractInstance);
+                    logger.info("Check transaction process finished!")
+                    balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
+                    adjustedBalance = balance / Math.pow(10, decimal);
+                    logger.info("After correction: ICO Etherum received: %f, token left to sell: %f", ethereumReceived.toFixed(6), adjustedBalance - (totalToken - totalTokenToSend));
+                    cronStarted = false;
+                    clearInterval(cron);
+                    initCalled = false;
+                }
+                // Resend all previoulsy sended transaction
+                else if (checkMode ===2)
+                {
+                    // delete all transactions in transaction table
+                    mTransaction.destroyAll(function(err, info) {
+                        if (err) {
+                            logger.error("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err));
+                            return cb("Error occurs when cleaning Transaction table. error: " + JSON.stringify(err), null);
+                        }
+                        logger.info(info.count + " were destroyed from Transaction table");	
+
+                        procTrans.forEach(function(t){
+                            reSendToken(t)
+                        });
+                        cronStarted = false;
+                    });
                 }
             }
         }
@@ -680,10 +756,21 @@ module.exports = function (_server, _appname) {
     return detectEthereumIncomeInstance;
 }
   
+DetectEthereumIncome.prototype.ResendEmitedToken = function (cb) {
+    if (!cronStarted)
+    {
+        detectEthereumIncomeInstance.Init(cb, 2);
+        return cb(null, "ReSend emited transaction started!"); 
+    }
+    else{
+        return cb("cronStarted already started!, ResendEmitedToken aborded!", null); 
+    }
+}
+
 DetectEthereumIncome.prototype.StartSendToken = function(cb) {
     if(!initCalled)
     {
-         detectEthereumIncomeInstance.Init(cb, false);
+         detectEthereumIncomeInstance.Init(cb, 0);
     }
   
     if (!cronStarted)
@@ -713,7 +800,7 @@ DetectEthereumIncome.prototype.CheckAndFix = function (cb) {
         cronStarted = false;
         clearInterval(cron);
     }
-    detectEthereumIncomeInstance.Init(cb, true);
+    detectEthereumIncomeInstance.Init(cb, 1);
   
     cronStarted = true;
     return cb(null, "CheckAndFix transaction started!"); 
