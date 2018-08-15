@@ -8,7 +8,8 @@
   },
   "properties": {
     "EmiterWallet": {
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "ReceiptWallet": {
       "type": "string"

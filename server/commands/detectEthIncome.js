@@ -33,7 +33,7 @@ var DetectEthereumIncome = function (_server, _appname) {
     mParam = _server.models.Param;
     mParamBackup = _server.models.ParamBackup;
     mTransaction = _server.models.transaction;
-    mReferee = _server.models.referee;
+    mReferee = _server.models.Referee;
 };
 
 DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
@@ -234,7 +234,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         {
                             discountFactor = Discount2Factor;
                         }
-                        var ajustedTokenPrice = web3.toBigNumber(tokenPriceEth / discountFactor);
+                        var ajustedTokenPrice = web3.toBigNumber(tokenPriceEth * discountFactor);
                         var nbTokenToTransfert = nbEth.dividedBy(ajustedTokenPrice);
                         var nbTokenUnitToTransfert = nbTokenToTransfert.times(Math.pow(10, decimal));
                         logger.info(" -> Send: " + nbTokenToTransfert.toNumber().toFixed(8) + " SSWT to " + e.from + " with discount factor: " + discountFactor);
@@ -268,7 +268,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, transUpdateCB.bind(null, nbTokenUnitToTransfert));
                         }
 
-                        checkReferee(e);
+                        checkReferee(e, nbTokenUnitToTransfert);
                     }, function(err) {
                         if(err)
                         {
@@ -279,22 +279,22 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             });
         }
 
-        function checkReferee(transaction) {
-            mReferee.find( { where: { WalletInvestor: transation.from}}, processReferee.bind(null, nbTokenUnitToTransfert, transaction));
+        function checkReferee(transaction, nbTokenUnitToTransfert) {
+            mReferee.find( { where: { WalletInvestor: transaction.from}}, processReferee.bind(null, nbTokenUnitToTransfert, transaction));
         }
 
         function processReferee(nbToken, transaction, err, instance) {
             if (err) {
                 logger.error("Error occurs when find a referee in table(investor: " + e.from + ") error: " + JSON.stringify(err));
             }
-            else
+            else if (instance.length > 0)
             {
                 var dateNow = new Date();
-                var dateReferee = new Date(referee.StartDateReferee);
+                var dateReferee = new Date(instance[0].StartDateReferee);
                 if (dateNow.getTime() > dateReferee.getTime()) {
                     var nbtokenToReferee = nbToken.dividedBy(10);
 
-                    mTransaction.create({ EmiterWallet: referee.WalletReferee, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash + "_referee", NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferee, DiscountFactor: 0 }, transCreateCB.bind(null, nbtokenToReferee));
+                    mTransaction.create({ EmiterWallet: instance[0].WalletReferee, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferee, DiscountFactor: 0, RefereeId: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenToReferee));
                 }
             }
         }
@@ -573,16 +573,16 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
         function reSendToken(instance) {
             var nbToken = web3.toBigNumber(instance.NbToken);
-            tokenContractInstance.transfer(instance.EmiterWallet, nbToken.multipliyedBy(Math.pow(10, decimal)), {gas: transactionGaz, gasPrice: gazPrice}, function(err, thash) {
+            tokenContractInstance.transfer(instance.EmiterWallet, nbToken.times(Math.pow(10, decimal)), {gas: transactionGaz, gasPrice: gazPrice}, function(inst, err, thash) {
                 if (!err) {
-                    web3.eth.getTransaction(thash, function(err, trans) {
+                    web3.eth.getTransaction(thash, function(i, err, trans) {
                         if(err){
                             logger.error("Error: web3.eth.getTransaction() return an error after send/deploy transaction (transaction hash: " + thash + ") error: " + JSON.stringify(err));
                         }
                         else {
                             logger.info("Tokens sended to: " + trans.to + " transaction hash: " + trans.hash);
 
-                            mTransaction.create({ EmiterWallet: instance.from, DateTimeIn: instance.DateTimeIn, InTransactionHash: instance.InTransactionHash, NonceIn: instance.NonceIn, NbEthereum: instance.NbEthereum, NbToken: instance.NbToken, DiscountFactor: instance.DiscountFactor }, function(err, instance) {
+                            mTransaction.create({ EmiterWallet: i.EmiterWallet, DateTimeIn: i.DateTimeIn, InTransactionHash: i.InTransactionHash, NonceIn: i.NonceIn, NbEthereum: i.NbEthereum, NbToken: i.NbToken, DiscountFactor: i.DiscountFactor, RefereeId: i.RefereeId }, function(err, instance) {
                                 // update transaction table
                                 instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": instance.NbToken }, function (err, instance) {
                                     if (err) {
@@ -591,7 +591,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                                 })
                             });
                         }
-                    }.bind(null, instance))
+                    }.bind(null, inst))
                 }
                 else {
                     logger.info("reSend token to wallet " + instance.EmiterWallet + " for " + instance.NbToken + " tokens from input transaction " + instance.InTransactionHash + " error: " + JSON.stringify(err));
@@ -716,6 +716,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         });
                         cronStarted = false;
                     });
+                    logger.info("Resend tokens done!");
                 }
             }
         }
@@ -768,13 +769,9 @@ DetectEthereumIncome.prototype.ResendEmitedToken = function (cb) {
 }
 
 DetectEthereumIncome.prototype.StartSendToken = function(cb) {
-    if(!initCalled)
-    {
-         detectEthereumIncomeInstance.Init(cb, 0);
-    }
-  
     if (!cronStarted)
     {
+        detectEthereumIncomeInstance.Init(cb, 0);
         cronStarted = true;
         return cb(null, "Send token cron started!"); 
     }
@@ -786,6 +783,8 @@ DetectEthereumIncome.prototype.StartSendToken = function(cb) {
 DetectEthereumIncome.prototype.StopSendToken = function (cb) {
     if (cronStarted) {
         cronStarted = false;
+        initCalled = false;
+        clearInterval(cron);
         return cb(null, "Send token cron stoped!"); 
     }
     else
