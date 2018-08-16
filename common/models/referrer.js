@@ -1,7 +1,7 @@
 /**
  * Module for Referrals database table related features.
  *
- * @module		Referee
+ * @module		Referrer
  * @file		This file defines the ICO module.
  * @author		Alain Saffay
  * @link        http://secure-swap.com
@@ -115,29 +115,29 @@ function isString(val) {
  * Module export
  *
  * @public
- * @param {Object} Referee Model
+ * @param {Object} Referrer Model
  * @api public
  */
-module.exports = function(Referee) {
+module.exports = function(Referrer) {
 
 	// https://loopback.io/doc/en/lb3/Authentication-authorization-and-permissions.html
-	Referee.disableRemoteMethodByName('upsert');								// disables PATCH /ICOs
-	Referee.disableRemoteMethodByName('find');									// disables GET /ICOs
-	Referee.disableRemoteMethodByName('replaceOrCreate');						// disables PUT /ICOs
-	Referee.disableRemoteMethodByName('create');								// disables POST /ICOs
-	Referee.disableRemoteMethodByName('prototype.updateAttributes');			// disables PATCH /ICOs/{id}
-	Referee.disableRemoteMethodByName('findById');								// disables GET /ICOs/{id}
-	Referee.disableRemoteMethodByName('exists');								// disables HEAD /ICOs/{id}
-	Referee.disableRemoteMethodByName('replaceById');							// disables PUT /ICOs/{id}
-	Referee.disableRemoteMethodByName('deleteById');							// disables DELETE /ICOs/{id}
-	Referee.disableRemoteMethodByName('prototype.__findById__accessTokens');	// disable GET /ICOs/{id}/accessTokens/{fk}
-	Referee.disableRemoteMethodByName('prototype.__updateById__accessTokens');	// disable PUT /ICOs/{id}/accessTokens/{fk}
-	Referee.disableRemoteMethodByName('prototype.__destroyById__accessTokens');	// disable DELETE /ICOs/{id}/accessTokens/{fk}
-	Referee.disableRemoteMethodByName('prototype.__count__accessTokens');		// disable  GET /ICOs/{id}/accessTokens/count
-	Referee.disableRemoteMethodByName('count');									// disables GET /ICOs/count
-	Referee.disableRemoteMethodByName('findOne');								// disables GET /ICOs/findOne
-	Referee.disableRemoteMethodByName('update');								// disables POST /ICOs/update
-	Referee.disableRemoteMethodByName('upsertWithWhere');						// disables POST /I18ns/upsertWithWhere
+	Referrer.disableRemoteMethodByName('upsert');								// disables PATCH /ICOs
+	Referrer.disableRemoteMethodByName('find');									// disables GET /ICOs
+	Referrer.disableRemoteMethodByName('replaceOrCreate');						// disables PUT /ICOs
+	Referrer.disableRemoteMethodByName('create');								// disables POST /ICOs
+	Referrer.disableRemoteMethodByName('prototype.updateAttributes');			// disables PATCH /ICOs/{id}
+	Referrer.disableRemoteMethodByName('findById');								// disables GET /ICOs/{id}
+	Referrer.disableRemoteMethodByName('exists');								// disables HEAD /ICOs/{id}
+	Referrer.disableRemoteMethodByName('replaceById');							// disables PUT /ICOs/{id}
+	Referrer.disableRemoteMethodByName('deleteById');							// disables DELETE /ICOs/{id}
+	Referrer.disableRemoteMethodByName('prototype.__findById__accessTokens');	// disable GET /ICOs/{id}/accessTokens/{fk}
+	Referrer.disableRemoteMethodByName('prototype.__updateById__accessTokens');	// disable PUT /ICOs/{id}/accessTokens/{fk}
+	Referrer.disableRemoteMethodByName('prototype.__destroyById__accessTokens');	// disable DELETE /ICOs/{id}/accessTokens/{fk}
+	Referrer.disableRemoteMethodByName('prototype.__count__accessTokens');		// disable  GET /ICOs/{id}/accessTokens/count
+	Referrer.disableRemoteMethodByName('count');									// disables GET /ICOs/count
+	Referrer.disableRemoteMethodByName('findOne');								// disables GET /ICOs/findOne
+	Referrer.disableRemoteMethodByName('update');								// disables POST /ICOs/update
+	Referrer.disableRemoteMethodByName('upsertWithWhere');						// disables POST /I18ns/upsertWithWhere
 
 
 	/**
@@ -150,7 +150,7 @@ module.exports = function(Referee) {
 	 * @callback {Function} cb        Callback function
 	 * @param    {Error}    err       Error information
 	 */
-	Referee.register = function(wallets, cb) {
+	Referrer.register = function(wallets, cb) {
 		var e = new Error(g.f('Invalid Param'));
 		e.status = e.statusCode = 401;
 		e.code = 'INVALID_PARAM';
@@ -165,18 +165,21 @@ module.exports = function(Referee) {
 			}
 		}
 
-		// A partir d'ici, tu as :
-		// wallets.referrer: l'adresse wallet du referrer (parrain)
-		// wallets.referrals: Le Array des adresses de wallets des referrals (filleuls)
-
-		// Je ne sais pas trop ce que tu va en faire,
-		// en gros tu va devoir updater ta table Referree
-		// Referee.create({
-		// 	referrer: wallets.referrer,
-		// 	referrals: wallets.referrals
-		// }, function(err, referee) {
-		// 	if (err) return cb(err, null);
-		// 	return cb(null);
-		// });
+		wallets.referrals.forEach(function(ref){
+			Referrer.find( { where: { WalletInvestor: ref}}, function(err, instance){
+				if (err) {
+					return cb(err, null);	
+				}
+				else if (instance.length > 0) {
+					return cb(null, "referral: " + ref + " already in table!");
+				}
+				Referrer.create({ WalletInvestor: ref, WalletReferrer: wallets.referrer, StartDateReferrer: new Date().getTime()}, function(err, referrer) {
+					if (err) {
+						return cb(err, null);
+					}
+					return cb(null, "Referral: " + referrer.WalletInvestor + " of referrer: " + referrer.WalletReferrer + " added");
+				});
+			});
+		});
 	};
 };

@@ -16,7 +16,7 @@ var appname;
 var mParam;
 var mParamBackup;
 var mTransaction;
-var mReferee;
+var mReferrer;
 
 var cronStarted = false;
 var detectEthereumIncomeInstance = null;
@@ -34,7 +34,7 @@ var DetectEthereumIncome = function (_server, _appname) {
     mParam = _server.models.Param;
     mParamBackup = _server.models.ParamBackup;
     mTransaction = _server.models.transaction;
-    mReferee = _server.models.Referee;
+    mReferrer = _server.models.Referrer;
 };
 
 DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
@@ -269,7 +269,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, transUpdateCB.bind(null, nbTokenUnitToTransfert));
                         }
 
-                        checkReferee(e, nbTokenUnitToTransfert);
+                        checkReferrer(e, nbTokenUnitToTransfert);
                     }, function(err) {
                         if(err)
                         {
@@ -280,22 +280,33 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             });
         }
 
-        function checkReferee(transaction, nbTokenUnitToTransfert) {
-            mReferee.find( { where: { WalletInvestor: transaction.from}}, processReferee.bind(null, nbTokenUnitToTransfert, transaction));
+        function checkReferrer(transaction, nbTokenUnitToTransfert) {
+            mReferrer.find( { where: { WalletInvestor: transaction.from}}, processReferrer.bind(null, nbTokenUnitToTransfert, transaction));
         }
 
-        function processReferee(nbToken, transaction, err, instance) {
+        function processReferrer(nbToken, transaction, err, instance) {
             if (err) {
-                logger.error("Error occurs when find a referee in table(investor: " + e.from + ") error: " + JSON.stringify(err));
+                logger.error("Error occurs when find a referrer in table(investor: " + e.from + ") error: " + JSON.stringify(err));
             }
             else if (instance.length > 0)
             {
+                var referrerPart = 20;
+                mReferrer.find( { where: { WalletReferrer: instance[0].WalletReferrer}}, function(err, instance) {
+                    if (err) {
+                        logger.error("Error occurs when find all referrals in table(Referrer: " + instance[0].WalletReferrer + ") error: " + JSON.stringify(err));
+                    }
+                    else {
+                        if (instance.length >= 10) {
+                            referrerPart = 10;
+                        }
+                    }
+                });
                 var dateNow = new Date();
-                var dateReferee = new Date(instance[0].StartDateReferee);
-                if (dateNow.getTime() > dateReferee.getTime()) {
-                    var nbtokenToReferee = nbToken.dividedBy(10);
+                var dateReferrer = new Date(instance[0].StartDateReferrer);
+                if (dateNow.getTime() > dateReferrer.getTime()) {
+                    var nbtokenToReferrer = nbToken.dividedBy(referrerPart);
 
-                    mTransaction.create({ EmiterWallet: instance[0].WalletReferee, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferee, DiscountFactor: 0, RefereeId: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenToReferee));
+                    mTransaction.create({ EmiterWallet: instance[0].WalletReferrer, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferrer, DiscountFactor: 0, Referral: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenToReferrer));
                 }
             }
         }

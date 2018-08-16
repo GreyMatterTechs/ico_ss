@@ -1,6 +1,6 @@
 {
-  "name": "Referee",
-  "base": "PersistedModel",
+  "name": "Referrer",
+  "base": "PersisredModel",
   "idInjection": true,
   "options": {
     "validateUpsert": true
@@ -10,11 +10,11 @@
       "type": "string",
       "required": true
     },
-    "WalletReferee": {
+    "WalletReferrer": {
       "type": "string",
       "required": true
     },
-    "StartDateReferee": {
+    "StartDateReferrer": {
       "type": "string",
       "required": true
     }

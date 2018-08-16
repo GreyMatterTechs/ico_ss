@@ -48,7 +48,7 @@
     "dataSource": "db",
     "public": true
   },
-  "Referee": {
+  "Referrer": {
     "dataSource": "db",
     "public": true
   }

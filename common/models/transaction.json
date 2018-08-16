@@ -41,8 +41,8 @@
     "DateTimeOut": {
       "type": "string"
     },
-    "RefereeId": {
-      "type": "number"
+    "Referral": {
+      "type": "string"
     }
   },
   "validations": [],
