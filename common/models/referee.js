@@ -15,13 +15,11 @@
 // ------------------------------------------------------------------------------------------------------
 
 const path		= require('path');
-const config	= require(path.join(__dirname, '../../server/config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
-const g			= require('../../node_modules/loopback/lib/globalize');
-const app		= require('../../server/server');
+const appRoot	= require('app-root-path');
 const CryptoJS	= require('crypto-js');
 const sha3		= require('crypto-js/sha3');
-const logger	= reqlocal('/server/boot/winston.js').logger;
-
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 // ------------------------------------------------------------------------------------------------------
 // Local Vars

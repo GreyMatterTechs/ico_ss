@@ -1,12 +1,14 @@
 'use strict';
 global.reqlocal = require('app-root-path').require;
 
-var loopback	= require('loopback');
-var boot		= require('loopback-boot');
-var path		= require('path');
-var bodyParser	= require('body-parser');
-var helmet		= require('helmet');
-var config		= require(path.join(__dirname, 'config' + (process.env.NODE_ENV !== 'development' ? ('.' + process.env.NODE_ENV) : '') + '.json'));
+const path			= require('path');
+const appRoot		= require('app-root-path');
+const loopback		= require('loopback');
+const boot			= require('loopback-boot');
+const bodyParser	= require('body-parser');
+const helmet		= require('helmet');
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 var app = module.exports = loopback();
 

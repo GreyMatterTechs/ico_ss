@@ -1,8 +1,11 @@
 'use strict';
 
-var path		= require('path');
-//var loopback	= require('../../node_modules/loopback/lib/loopback');
-var config		= require( path.join(__dirname, '../../server/config' + (process.env.NODE_ENV!=='development' ? ('.'+process.env.NODE_ENV) : '') + '.json') );
+const path		= require('path');
+const appRoot	= require('app-root-path');
+//const loopback	= require('../../node_modules/loopback/lib/loopback');
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
+
 
 module.exports = function () {
 

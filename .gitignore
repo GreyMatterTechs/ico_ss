@@ -19,3 +19,4 @@ node_modules
 npm-debug.log
 myData.json
 logs/*
+.node-xmlhttprequest*

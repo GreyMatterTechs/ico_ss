@@ -8,7 +8,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "start": "set NODE_ENV=development&&node .",
+    "start": "node .",
     "posttest": "npm run lint && nsp check"
   },
   "dependencies": {

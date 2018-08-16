@@ -1,10 +1,11 @@
 'use strict';
 
-var path		= require('path');
-var requestIp	= require('request-ip');
-var geoip		= require('geoip-lite');
-var config		= require( path.join(__dirname, '../../server/config' + (process.env.NODE_ENV!=='development' ? ('.'+process.env.NODE_ENV) : '') + '.json') );
-
+const path		= require('path');
+const appRoot	= require('app-root-path');
+const requestIp	= require('request-ip');
+const geoip		= require('geoip-lite');
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 function isString(val) {
 	return typeof val === 'string' || ((!!val && typeof val === 'object') && Object.prototype.toString.call(val) === '[object String]');
@@ -37,16 +38,16 @@ function shorten2(str, len) {
 
 module.exports = function(server) {
 
-	server.locals.env = process.env.NODE_ENV; 
+	server.locals.env = process.env.NODE_ENV;
 	server.locals.db = server.dataSources.db.settings.host ? server.dataSources.db.settings.host : server.dataSources.db.settings.file;
-	
+
 	var router	= server.loopback.Router();
-	
+
 	// ------------------------------------------------
 	// Add Expires header to /images and /stylesheets directories
 	// ------------------------------------------------
 
-	router.get('/*', function (req, res, next) {
+	router.get('/*', function(req, res, next) {
 		var ip = requestIp.getClientIp(req);
 		var geo = geoip.lookup(ip);
 		if (geo) {
@@ -69,23 +70,23 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// Install a `/` route that returns server status
 	// ------------------------------------------------
-	//router.get('/', server.loopback.status());
-	router.get('/', function (req, res) {
+	// router.get('/', server.loopback.status());
+	router.get('/', function(req, res) {
 		res.render('index', {
 			appName: config.appName,
 			err: ''
 		});
 	});
-	
+
 	// ------------------------------------------------
 	// create and deplay smart contract
 	// ------------------------------------------------
-	router.get('/createSC', function (req, res) {
+	router.get('/createSC', function(req, res) {
 		var de = require('../commands/detectEthIncome')(server, "detectEthIncome");
-		de.BackupParams( (err, result) => {
+		de.BackupParams((err, result) => {
 			if (err) return res.send('Error: '+err);
 			var sc = require('../commands/createSC')(server, "createSC");
-			sc.create( (err, tokenInfos) => {
+			sc.create((err, tokenInfos) => {
 				if (err) return res.send('Error: '+err);
 				res.send(tokenInfos);
 			});
@@ -95,9 +96,9 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// Clean transaction table
 	// ------------------------------------------------
-	router.get('/cleanTransaction', function (req, res) {
+	router.get('/cleanTransaction', function(req, res) {
 		var sc = require('../commands/createSC')(server, "cleanTransaction");
-		sc.cleanTransaction( (err, tokenInfos) => {
+		sc.cleanTransaction((err, tokenInfos) => {
 			if (err) return res.send('Error: '+err);
 			res.send(tokenInfos);
 		});
@@ -106,9 +107,9 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// Resent emited token
 	// ------------------------------------------------
-	router.get('/ResendEmitedToken', function (req, res) {
+	router.get('/ResendEmitedToken', function(req, res) {
 		var sc = require('../commands/detectEthIncome')(server, "ResendEmitedToken");
-		sc.ResendEmitedToken( (err, tokenInfos) => {
+		sc.ResendEmitedToken((err, tokenInfos) => {
 			if (err) return res.send('Error: '+err);
 			res.send(tokenInfos);
 		});
@@ -117,9 +118,9 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	// start ethereum send for tests
 	// ------------------------------------------------
-	router.get('/StartSendEth', function (req, res) {
+	router.get('/StartSendEth', function(req, res) {
 		var se = require('../commands/testSendEth')(server, "testSendEth");
-		se.StartSend( (err, result) => {
+		se.StartSend((err, result) => {
 			if (err) return res.send('Error: '+err);
 			res.send(result);
 		});

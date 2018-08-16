@@ -1,15 +1,16 @@
 "use strict"
 
 // required
+const path		= require('path');
+const appRoot	= require('app-root-path');
 const Web3		= require("web3");
 const Solc		= require("solc");
 const Fs		= require("fs");
 const abiDecoder= require("abi-decoder");
 const Async		= require("async");
-const path		= require('path');
-const logger    = reqlocal('/server/boot/winston.js').logger;
-const config	= require( path.join(__dirname, '../config' + (process.env.NODE_ENV!=='development' ? ('.'+process.env.NODE_ENV) : '') + '.json') );
 const request   = require('superagent');
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 var appname;
 var mParam;
