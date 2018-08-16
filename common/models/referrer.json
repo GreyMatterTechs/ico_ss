@@ -1,6 +1,6 @@
 {
   "name": "Referrer",
-  "base": "PersisredModel",
+  "base": "PersistedModel",
   "idInjection": true,
   "options": {
     "validateUpsert": true
