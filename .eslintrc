@@ -1,3 +1,52 @@
 {
-  "extends": "loopback"
+	"globals": {
+		"FlipClock": true,
+		"moment": true,
+		"Swiper": true,
+		"reqlocal": true,
+		"noUiSlider": true,
+		"async": true
+	},
+	"rules": {
+		"no-console": 0,
+		"no-debugger": 0,
+		"one-var": 0,
+        "indent": [
+            2,
+            "tab"
+        ],
+        "quotes": [
+            2,
+            "single"
+        ],
+        "linebreak-style": 0,
+        "semi": [
+            2,
+            "always"
+		],
+		"no-multiple-empty-lines": ["error", { 
+			"max": 2, 
+			"maxEOF": 1 
+		}],
+		"padded-blocks": 0,
+		"comma-dangle": ["error", {
+			"arrays": "never",
+			"objects": "never",
+			"imports": "never",
+			"exports": "never",
+			"functions": "ignore"
+		}],
+		"max-len": 0,
+		"key-spacing": ["error", { 
+			"mode": "minimum"
+		}]
+	},
+	"extends": "loopback",
+	"env": {
+		"browser": true,
+		"node": true,
+		"es6": true,
+		"amd": true,
+		"jquery": true
+  	}
 }
