@@ -139,7 +139,6 @@ module.exports = function(Referrer) {
 	Referrer.disableRemoteMethodByName('update');								// disables POST /ICOs/update
 	Referrer.disableRemoteMethodByName('upsertWithWhere');						// disables POST /I18ns/upsertWithWhere
 
-
 	/**
 	 * Registers a set Referrals
 	 * Usually called by secureswap website
@@ -166,20 +165,22 @@ module.exports = function(Referrer) {
 		}
 
 		wallets.referrals.forEach(function(ref){
-			Referrer.find( { where: { WalletInvestor: ref}}, function(err, instance){
-				if (err) {
-					return cb(err, null);	
-				}
-				else if (instance.length > 0) {
-					return cb(null, "referral: " + ref + " already in table!");
-				}
-				Referrer.create({ WalletInvestor: ref, WalletReferrer: wallets.referrer, StartDateReferrer: new Date().getTime()}, function(err, referrer) {
+			if (ref !== null && ref !== "" && ref !== undefined) {
+				Referrer.find( { where: { WalletInvestor: ref}}, function(err, instance){
 					if (err) {
-						return cb(err, null);
+						return cb(err, null);	
 					}
-					return cb(null, "Referral: " + referrer.WalletInvestor + " of referrer: " + referrer.WalletReferrer + " added");
+					else if (instance.length > 0) {
+						return cb(null, "referral: " + ref + " already in table!");
+					}
+					Referrer.create({ WalletInvestor: ref, WalletReferrer: wallets.referrer, StartDateReferrer: new Date().getTime()}, function(err, referrer) {
+						if (err) {
+							return cb(err, null);
+						}
+						return cb(null, "Referral: " + referrer.WalletInvestor + " of referrer: " + referrer.WalletReferrer + " added");
+					});
 				});
-			});
+			}
 		});
 	};
 };

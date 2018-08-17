@@ -54,7 +54,7 @@ function sleep (ms) {
  */
 async function WalletReceived(param, web3, cb) {
 	var tokenInitialOwnerAddress = param.ICOWalletTokenAddress;
-	logger.info("Inital token owner is: ", tokenInitialOwnerAddress);
+	logger.info("Inital token owner is: " + tokenInitialOwnerAddress);
 
 	let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
 	let compiledContract = Solc.compile(source, 1);

@@ -291,7 +291,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             else if (instance.length > 0)
             {
                 var referrerPart = 20;
-                mReferrer.find( { where: { WalletReferrer: instance[0].WalletReferrer}}, function(err, instance) {
+                mReferrer.find( { where: { WalletReferrer: instance[0].WalletReferrer}}, function(nbT, err, instance) {
                     if (err) {
                         logger.error("Error occurs when find all referrals in table(Referrer: " + instance[0].WalletReferrer + ") error: " + JSON.stringify(err));
                     }
@@ -300,14 +300,14 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             referrerPart = 10;
                         }
                     }
-                });
-                var dateNow = new Date();
-                var dateReferrer = new Date(instance[0].StartDateReferrer);
-                if (dateNow.getTime() > dateReferrer.getTime()) {
-                    var nbtokenToReferrer = nbToken.dividedBy(referrerPart);
+                    var dateNow = new Date();
+                    var dateReferrer = new Date(instance[0].StartDateReferrer);
+                    if (dateNow.getTime() > dateReferrer.getTime()) {
+                        var nbtokenToReferrer = nbT.dividedBy(referrerPart);
 
-                    mTransaction.create({ EmiterWallet: instance[0].WalletReferrer, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferrer, DiscountFactor: 0, Referral: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenToReferrer));
-                }
+                        mTransaction.create({ EmiterWallet: instance[0].WalletReferrer, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferrer, DiscountFactor: 0, Referral: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenToReferrer));
+                    }
+                }.bind(null, nbToken));
             }
         }
 
@@ -594,7 +594,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         else {
                             logger.info("Tokens sended to: " + trans.to + " transaction hash: " + trans.hash);
 
-                            mTransaction.create({ EmiterWallet: i.EmiterWallet, DateTimeIn: i.DateTimeIn, InTransactionHash: i.InTransactionHash, NonceIn: i.NonceIn, NbEthereum: i.NbEthereum, NbToken: i.NbToken, DiscountFactor: i.DiscountFactor, RefereeId: i.RefereeId }, function(err, instance) {
+                            mTransaction.create({ EmiterWallet: i.EmiterWallet, DateTimeIn: i.DateTimeIn, InTransactionHash: i.InTransactionHash, NonceIn: i.NonceIn, NbEthereum: i.NbEthereum, NbToken: i.NbToken, DiscountFactor: i.DiscountFactor, Referral: i.Referral }, function(err, instance) {
                                 // update transaction table
                                 instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": instance.NbToken }, function (err, instance) {
                                     if (err) {
