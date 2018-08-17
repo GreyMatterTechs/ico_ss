@@ -713,7 +713,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     initCalled = false;
                 }
                 // Resend all previoulsy sended transaction
-                else if (checkMode ===2)
+                else if (checkMode === 2)
                 {
                     // delete all transactions in transaction table
                     mTransaction.destroyAll(function(err, info) {
@@ -727,6 +727,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             reSendToken(t)
                         });
                         cronStarted = false;
+                        clearInterval(cron);
                     });
                     logger.info("Resend tokens done!");
                 }
@@ -784,7 +785,6 @@ DetectEthereumIncome.prototype.StartSendToken = function(cb) {
     if (!cronStarted)
     {
         detectEthereumIncomeInstance.Init(cb, 0);
-        cronStarted = true;
         return cb(null, "Send token cron started!"); 
     }
     else{
@@ -813,7 +813,6 @@ DetectEthereumIncome.prototype.CheckAndFix = function (cb) {
     }
     detectEthereumIncomeInstance.Init(cb, 1);
   
-    cronStarted = true;
     return cb(null, "CheckAndFix transaction started!"); 
 }
 
