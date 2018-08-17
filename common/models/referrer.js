@@ -18,6 +18,8 @@ const path		= require('path');
 const appRoot	= require('app-root-path');
 const CryptoJS	= require('crypto-js');
 const sha3		= require('crypto-js/sha3');
+var async		= require('async');
+const g			= reqlocal(path.join('node_modules', 'loopback', 'lib', 'globalize'));
 const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
@@ -120,24 +122,27 @@ function isString(val) {
  */
 module.exports = function(Referrer) {
 
-	// https://loopback.io/doc/en/lb3/Authentication-authorization-and-permissions.html
-	Referrer.disableRemoteMethodByName('upsert');								// disables PATCH /ICOs
-	Referrer.disableRemoteMethodByName('find');									// disables GET /ICOs
-	Referrer.disableRemoteMethodByName('replaceOrCreate');						// disables PUT /ICOs
-	Referrer.disableRemoteMethodByName('create');								// disables POST /ICOs
-	Referrer.disableRemoteMethodByName('prototype.updateAttributes');			// disables PATCH /ICOs/{id}
-	Referrer.disableRemoteMethodByName('findById');								// disables GET /ICOs/{id}
-	Referrer.disableRemoteMethodByName('exists');								// disables HEAD /ICOs/{id}
-	Referrer.disableRemoteMethodByName('replaceById');							// disables PUT /ICOs/{id}
-	Referrer.disableRemoteMethodByName('deleteById');							// disables DELETE /ICOs/{id}
-	Referrer.disableRemoteMethodByName('prototype.__findById__accessTokens');	// disable GET /ICOs/{id}/accessTokens/{fk}
-	Referrer.disableRemoteMethodByName('prototype.__updateById__accessTokens');	// disable PUT /ICOs/{id}/accessTokens/{fk}
-	Referrer.disableRemoteMethodByName('prototype.__destroyById__accessTokens');	// disable DELETE /ICOs/{id}/accessTokens/{fk}
-	Referrer.disableRemoteMethodByName('prototype.__count__accessTokens');		// disable  GET /ICOs/{id}/accessTokens/count
-	Referrer.disableRemoteMethodByName('count');									// disables GET /ICOs/count
-	Referrer.disableRemoteMethodByName('findOne');								// disables GET /ICOs/findOne
-	Referrer.disableRemoteMethodByName('update');								// disables POST /ICOs/update
-	Referrer.disableRemoteMethodByName('upsertWithWhere');						// disables POST /I18ns/upsertWithWhere
+	if (process.env.NODE_ENV !== undefined) {
+		// https://loopback.io/doc/en/lb3/Authentication-authorization-and-permissions.html
+		Referrer.disableRemoteMethodByName('upsert');								// disables PATCH /Referrers
+		Referrer.disableRemoteMethodByName('find');									// disables GET /Referrers
+		Referrer.disableRemoteMethodByName('replaceOrCreate');						// disables PUT /Referrers
+		Referrer.disableRemoteMethodByName('create');								// disables POST /Referrers
+		Referrer.disableRemoteMethodByName('prototype.updateAttributes');			// disables PATCH /Referrers/{id}
+		Referrer.disableRemoteMethodByName('findById');								// disables GET /Referrers/{id}
+		Referrer.disableRemoteMethodByName('exists');								// disables HEAD /Referrers/{id}
+		Referrer.disableRemoteMethodByName('replaceById');							// disables PUT /Referrers/{id}
+		Referrer.disableRemoteMethodByName('deleteById');							// disables DELETE /Referrers/{id}
+		Referrer.disableRemoteMethodByName('prototype.__findById__accessTokens');	// disable GET /Referrers/{id}/accessTokens/{fk}
+		Referrer.disableRemoteMethodByName('prototype.__updateById__accessTokens');	// disable PUT /Referrers/{id}/accessTokens/{fk}
+		Referrer.disableRemoteMethodByName('prototype.__destroyById__accessTokens');// disable DELETE /Referrers/{id}/accessTokens/{fk}
+		Referrer.disableRemoteMethodByName('prototype.__count__accessTokens');		// disable  GET /Referrers/{id}/accessTokens/count
+		Referrer.disableRemoteMethodByName('createChangeStream');					// disables POST /Referrers/change-stream
+		Referrer.disableRemoteMethodByName('count');								// disables GET /Referrers/count
+		Referrer.disableRemoteMethodByName('findOne');								// disables GET /Referrers/findOne
+		Referrer.disableRemoteMethodByName('update');								// disables POST /Referrers/update
+		Referrer.disableRemoteMethodByName('upsertWithWhere');						// disables POST /Referrers/upsertWithWhere
+	}
 
 	/**
 	 * Registers a set Referrals
@@ -160,15 +165,20 @@ module.exports = function(Referrer) {
 		for (var i = 0; i < wallets.referrals.length; i++) {
 			if (!isETHAddress(wallets.referrals[i])) {
 				return cb(e, null);
-				return true;
 			}
 		}
 
-		wallets.referrals.forEach(function(ref){
+		/* FIX: Philippe
+		 * 1 - On ne peux pas appeler cb() une fois dans chaque itération de boucle
+		 *     Il faut un seul appel possible à cb().
+		 * 2 - Pas besoin de tester ref===null, c'est déjà fait dans la boucle isETHAddress() juste au dessus
+		 */
+		/*
+		wallets.referrals.forEach(function(ref) {
 			if (ref !== null && ref !== "" && ref !== undefined) {
-				Referrer.find( { where: { WalletInvestor: ref}}, function(err, instance){
+				Referrer.find( { where: { WalletInvestor: ref}}, function(err, instance) {
 					if (err) {
-						return cb(err, null);	
+						return cb(err, null);
 					}
 					else if (instance.length > 0) {
 						return cb(null, "referral: " + ref + " already in table!");
@@ -180,6 +190,49 @@ module.exports = function(Referrer) {
 						return cb(null, "Referral: " + referrer.WalletInvestor + " of referrer: " + referrer.WalletReferrer + " added");
 					});
 				});
+			}
+		});
+		*/
+		/* Ré-écriture avec async.js, qui permet d'avoir un callback quand la boucle est finie 
+		 * Pense à faire un $ npm install --save async
+		 */
+		const ERRCODES = {
+			// codes d'erreurs totalement arbitraires :)
+			// 1000 est réservé pour le code coté client.
+			FIND:	'0x1001',
+			CREATE:	'0x1002'
+		};
+		var e2 = new Error(g.f('Internal error'));
+		e2.status = e2.statusCode = 200;
+		e2.code = 'INTERNAL_ERROR';
+		async.each(wallets.referrals, function(ref, callback) {
+			Referrer.find({where: {WalletInvestor: ref}}, function(err, instance) {
+				if (err) {
+					return callback({err: err, code: ERRCODES.FIND});				// on remonte l'erreur, et on passe à l'item suivant
+				} else if (instance.length > 0) {
+					return callback();												// on ignore cet item (pas d'erreur), et on passe à l'item suivant
+				} else {
+					Referrer.create({WalletInvestor: ref, WalletReferrer: wallets.referrer, StartDateReferrer: new Date().getTime()}, function(err, referrer) {
+						if (err) {
+							return callback({err: err, code: ERRCODES.CREATE});		// on remonte l'erreur, et on passe à l'item suivant
+						} else {
+							logger.info('Referral: ' + referrer.WalletInvestor + ' of referrer: ' + referrer.WalletReferrer + ' added.');
+							return callback();										// c'est bon, on passe à l'item suivant
+						}
+					});
+				}
+			});
+		}, function(err) {
+			// on arrive ici quand la boucle est finie, ou quand elle a été interrompue par une erreur.
+			// maintenant on peut appeler cb()
+			if (err) {
+				// !!!!  ici il faudrait un système d'alerte pour qu'on soit averti du problème immédiatement
+				logger.error('Referrer.register() failed. Err: ' + JSON.stringify(err) + ' Params: ' + JSON.stringify(wallets));
+				e2.code = err.code;
+				delete e2.stack;
+				return cb(e2, null);												// retour au client avec le code d'erreur
+			} else {
+				return cb(null, '');												// rien à retouner au client, on lui dira juste : "c'est bon".
 			}
 		});
 	};

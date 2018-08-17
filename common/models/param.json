@@ -1,99 +1,107 @@
 {
-  "name": "Param",
-  "plural": "Params",
-  "base": "PersistedModel",
-  "idInjection": true,
-  "options": {
-    "validateUpsert": true
-  },
-  "properties": {
-    "ICOWalletTokenAddress": {
-      "type": "string",
-      "required": true
-    },
-    "ICOWalletDiscount1Address": {
-      "type": "string",
-      "required": false
-    },
-    "ICOWalletDiscount2Address": {
-      "type": "string",
-      "required": false
-    },
-    "ICOWalletEthereumAddress": {
-      "type": "string",
-      "required": false
-    },
-    "TransactionGaz": {
-      "type": "number",
-      "required": false
-    },
-    "GazPice": {
-      "type": "number",
-      "required": false
-    },
-    "TokenContractTransactionHash": {
-      "type": "string",
-      "required": false
-    },
-    "TokenContractAddress": {
-      "type": "string",
-      "required": false
-    },
-    "NbTokenToSell": {
-      "type": "number",
-      "required": false
-    },
-    "NbTotalToken": {
-      "type": "number",
-      "required": false
-    },
-    "USDTokenPrice": {
-      "type": "number",
-      "required": false
-    },
-    "USDEthereumPrice": {
-      "type": "number",
-      "required": false
-    },
-    "Discount1Factor": {
-      "type": "number",
-      "required": false
-    },
-    "Discount2Factor": {
-      "type": "number",
-      "required": false
-    },
-    "NbTokenSold": {
-      "type": "number",
-      "required": false
-    },
-    "NbEthereum": {
-      "type": "number",
-      "required": false
-    },
-    "LastProcessedBlock": {
-      "type": "number",
-      "required": false
-    },
-    "BlockTokenStart": {
-      "type": "number",
-      "required": false
-    },
-    "NbBlockTransactionConfirmation": {
-      "type": "number",
-      "required": false
-    },
-    "IcoDateStart": {
-      "type": "number",
-      "required": false
-    },
-    "IcoDateEnd": {
-      "type": "number",
-      "required": false
-    }
-  },
-  "validations": [],
-  "relations": {},
-  "acls": [],
-  "methods": {}
+	"name": "Param",
+	"plural": "Params",
+	"base": "PersistedModel",
+	"idInjection": true,
+	"options": {
+		"validateUpsert": true
+	},
+	"properties": {
+		"ICOWalletTokenAddress": {
+			"type": "string",
+			"required": true
+		},
+		"ICOWalletDiscount1Address": {
+			"type": "string",
+			"required": false
+		},
+		"ICOWalletDiscount2Address": {
+			"type": "string",
+			"required": false
+		},
+		"ICOWalletEthereumAddress": {
+			"type": "string",
+			"required": false
+		},
+		"TransactionGaz": {
+			"type": "number",
+			"required": false
+		},
+		"GazPice": {
+			"type": "number",
+			"required": false
+		},
+		"TokenContractTransactionHash": {
+			"type": "string",
+			"required": false
+		},
+		"TokenContractAddress": {
+			"type": "string",
+			"required": false
+		},
+		"NbTokenToSell": {
+			"type": "number",
+			"required": false
+		},
+		"NbTotalToken": {
+			"type": "number",
+			"required": false
+		},
+		"USDTokenPrice": {
+			"type": "number",
+			"required": false
+		},
+		"USDEthereumPrice": {
+			"type": "number",
+			"required": false
+		},
+		"Discount1Factor": {
+			"type": "number",
+			"required": false
+		},
+		"Discount2Factor": {
+			"type": "number",
+			"required": false
+		},
+		"NbTokenSold": {
+			"type": "number",
+			"required": false
+		},
+		"NbEthereum": {
+			"type": "number",
+			"required": false
+		},
+		"LastProcessedBlock": {
+			"type": "number",
+			"required": false
+		},
+		"BlockTokenStart": {
+			"type": "number",
+			"required": false
+		},
+		"NbBlockTransactionConfirmation": {
+			"type": "number",
+			"required": false
+		},
+		"IcoDateStart": {
+			"type": "number",
+			"required": false
+		},
+		"IcoDateEnd": {
+			"type": "number",
+			"required": false
+		}
+	},
+	"hidden": [
+		"ICOWalletTokenAddress",
+		"ICOWalletDiscount1Address",
+		"ICOWalletDiscount2Address",
+		"ICOWalletEthereumAddress",
+		"TokenContractTransactionHash",
+		"TokenContractAddress"
+	],
+	"validations": [],
+	"relations": {},
+	"acls": [],
+	"methods": {}
 }

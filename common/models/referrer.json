@@ -1,26 +1,48 @@
 {
-  "name": "Referrer",
-  "base": "PersistedModel",
-  "idInjection": true,
-  "options": {
-    "validateUpsert": true
-  },
-  "properties": {
-    "WalletInvestor": {
-      "type": "string",
-      "required": true
-    },
-    "WalletReferrer": {
-      "type": "string",
-      "required": true
-    },
-    "StartDateReferrer": {
-      "type": "string",
-      "required": true
-    }
-  },
-  "validations": [],
-  "relations": {},
-  "acls": [],
-  "methods": {}
+	"name": "Referrer",
+	"plural": "Referrers",
+	"base": "PersistedModel",
+	"idInjection": true,
+	"options": {
+		"validateUpsert": true
+	},
+	"properties": {
+		"WalletInvestor": {
+			"type": "string",
+			"required": true
+		},
+		"WalletReferrer": {
+			"type": "string",
+			"required": true
+		},
+		"StartDateReferrer": {
+			"type": "string",
+			"required": true
+		}
+	},
+	"hidden": [
+		"WalletInvestor",
+		"WalletReferrer",
+		"StartDateReferrer"
+	],
+	"validations": [],
+	"relations": {},
+	"acls": [],
+	"methods": {
+		"register": {
+			"accepts": [{
+				"arg": "wallets",
+				"type": "Object",
+				"root": true
+			}],
+			"returns": {
+				"arg": "code",
+				"type": "Number",
+				"root": true
+			},
+			"http": {
+			  "verb": "post"
+			}
+		}
+	}
 }

@@ -45,6 +45,13 @@
       "type": "string"
     }
   },
+  "hidden": [
+	  "EmiterWallet",
+	  "ReceiptWallet",
+	  "InTransactionHash",
+	  "OutTransactionHash",
+	  "Referral"
+  ],
   "validations": [],
   "relations": {},
   "acls": [],
