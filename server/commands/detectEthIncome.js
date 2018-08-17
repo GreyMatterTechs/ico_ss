@@ -516,7 +516,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var totalTokenToSend = params[0].NbTokenToSell;
         var ethereumReceived = params[0].NbEthereum;
 
-        if (checkMode) {
+        if (checkMode === 1) {
             startBlock = params[0].BlockTokenStart;
             lastBlock = params[0].LastProcessedBlock;
         }
@@ -617,7 +617,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
                 adjustedBalance = balance / Math.pow(10, decimal);
                 
-                if (checkMode) {
+                if (checkMode === 1) {
                     logger.info("Before correction: ICO Etherum received: " + ethereumReceived.toFixed(6) + ", token left to sell: " + adjustedBalance - (totalToken - totalTokenToSend));
                 }
                 else {
