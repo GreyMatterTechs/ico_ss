@@ -502,7 +502,7 @@ function sendParams(log, pass, api, params, cb) {
     var intervalId  = null;
     var interval    = INTERVAL_DEFAULT;
 
-    function retry() {
+    function retry(err) {
         if (interval > INTERVAL_MAX) {                        // on abandonne, on sort avec erreur
             clearInterval(intervalId);
             return cb(err);
@@ -519,12 +519,12 @@ function sendParams(log, pass, api, params, cb) {
                     if (err.status === 401 && err.code === 'INVALID_TOKEN') {   // token invalide
                         login(log, pass, (err, id) => {
                             if (err)
-                                retry();                                        // on teste si on retry ou si on abandonne avec erreur
+                                retry(err);                                        // on teste si on retry ou si on abandonne avec erreur
                             if (id) 
                                 tokenId = id;
                         });
                     } else {
-                        retry();                                                // on teste si on retry ou si on abandonne avec erreur
+                        retry(err);                                                // on teste si on retry ou si on abandonne avec erreur
                     }
                 } else {
                     interval = INTERVAL_DEFAULT;
