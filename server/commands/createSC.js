@@ -220,7 +220,7 @@ function getCoinMarketCapId(cryptoName, cb) {
  * Get a valid token
  */
 function login(login, pass, cb) {
-	const url = 'https://www.secure-swap.com/login';
+	const url = 'https://www.secure-swap.com:3000/login';
 	request
 	.post(url)
 	.send({username: login, password: pass})
@@ -241,7 +241,7 @@ function sendParams(log, pass, api, params, cb) {
 	// first : login and get a valid token
 	login(log, pass, (err, tokenId) => {
 		// second : send data
-		const url = 'https://www.secure-swap.com/api/ICOs/' + api;
+		const url = 'https://www.secure-swap.com:3000/api/ICOs/' + api;
 		request
 		.post(url)
 		.send({tokenId: tokenId, params: params})
