@@ -105,7 +105,7 @@ async function WalletReceived(param, web3, cb) {
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
 	var ethereumPrice = 475;
-	var dateIcoStart = new Date("2018-08-09T00:00:00.000Z");
+	var dateIcoStart = new Date("2018-09-29T00:00:00.000Z");
 	var dateIcoEnd = new Date("2018-12-31T00:00:00.000Z")
 
 	getCoinMarketCapId("Ethereum", (err, id) => {
