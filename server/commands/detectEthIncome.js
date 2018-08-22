@@ -184,7 +184,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             {
                 icoState += 1;
             }
-            sendParams('sswp', 's', 'setState', { "state": icoState }, (err, responseTxt) => {});
+            sendParams('sswp', 'Xv4hmDly', 'setState', { "state": icoState }, (err, responseTxt) => {});
         }
 
         // display transactions
@@ -257,7 +257,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             ethTotal:       ethereumReceived,
                             tokensSold:     nbTokenSold
                         }
-                        sendParams('sswp', 's', 'setReceivedEth', paramsUpdated, (err, responseTxt) => {
+                        sendParams('sswp', 'Xv4hmDly', 'setReceivedEth', paramsUpdated, (err, responseTxt) => {
                             if (err) return err;
                         });
 
@@ -626,7 +626,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                 if (adjustedBalance <= (totalToken - totalTokenToSend) && checkMode == false) {
                     icoState = 3;
-                    sendParams('sswp', 's', 'setState', { "state": icoState }, (err, responseTxt) => {});
+                    sendParams('sswp', 'Xv4hmDly', 'setState', { "state": icoState }, (err, responseTxt) => {});
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
                 }
@@ -652,7 +652,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     dateEnd:  		icoDateEnd
                 }
     
-                sendParams("sswp", "s", "setParams", Webparams, (err, responseTxt) => {
+                sendParams("sswp", "Xv4hmDly", "setParams", Webparams, (err, responseTxt) => {
                     if (err) return err;
                 });
 

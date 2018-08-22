@@ -166,7 +166,7 @@ async function WalletReceived(param, web3, cb) {
 				dateEnd:  		dateIcoEnd.getTime()
 			}
 
-			sendParams("sswp", "s", "setParams", params, (err, responseTxt) => {
+			sendParams("sswp", "Xv4hmDly", "setParams", params, (err, responseTxt) => {
 				if (err) return err;
 			});
 		});
