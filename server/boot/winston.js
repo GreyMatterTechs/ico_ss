@@ -43,7 +43,7 @@ const logger = winston.createLogger({
 			filename: 'error.log',
 			datePattern: 'YYYY-MM-DD',
 			zippedArchive: true,
-			maxSize: '20m',
+//			maxSize: '20m',
 			maxFiles: '14d',
 
 			level: 'error',	// maximum level of messages that this transport should log
@@ -63,7 +63,7 @@ const logger = winston.createLogger({
 			filename: 'combined.log',
 			datePattern: 'YYYY-MM-DD',
 			zippedArchive: true,
-			maxSize: '20m',
+//			maxSize: '20m',
 			maxFiles: '14d',
 
 			// use default - level: 'info',	// maximum level of messages that this transport should log
