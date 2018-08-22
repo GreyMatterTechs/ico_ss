@@ -486,77 +486,53 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         /**
          * Send data on public website API
          */
-/**
- * Send data on public website API
- */
-const INTERVAL_DEFAULT  = 100;
-const INTERVAL_MAX      = 3000;
-var tokenId             = null;
-var busy                = false;
+        var tokenId = '';
+        var busy    = false;
 
-function sendParams(log, pass, api, params, cb) {
-    if (busy) return cb('busy');
-    busy = true;
+        function sendParams(log, pass, api, params, cb) {
+            if (busy) return cb('busy', false);
+            busy = true;
 
-    const URL       = 'https://www.secure-swap.com/api/ICOs/' + api;
-    var intervalId  = null;
-    var interval    = INTERVAL_DEFAULT;
+            function doRequest(callback) {
+                request
+                    .post('https://www.secure-swap.com/api/ICOs/' + api)
+                    .send({tokenId: tokenId, params: params})
+                    .end((err, res) => {
+                        if (err) {
+                            if (err.status === 401 && err.code === 'INVALID_TOKEN') {            // token invalide
+                                login(log, pass, (err, id) => {
+                                    if (err) return callback(err);
+                                    tokenId = id;
+                                    return callback(null, true);
+                                });
+                            } else {
+                                return callback(err);
+                            }
+                        } else {
+                            return callback(null, false);                                // requête réussie, on sort avec "true"
+                        }
+                    });    
+            }
 
-    function retry(err) {
-        if (interval > INTERVAL_MAX) {                        // on abandonne, on sort avec erreur
-            clearInterval(intervalId);
-            return cb(err);
-        }
-        interval += INTERVAL_DEFAULT;                        // on sort pas, on tente un retry en baissant la fréquence
-    }
-
-    function doRequest() {
-        request
-            .post(URL)
-            .send({tokenId: tokenId, params: params})
-            .end((err, res) => {
+            doRequest(function(err, login) {
                 if (err) {
-                    if (err.status === 401 && err.code === 'INVALID_TOKEN') {   // token invalide
-                        login(log, pass, (err, id) => {
-                            if (err)
-                                retry(err);                                        // on teste si on retry ou si on abandonne avec erreur
-                            if (id) 
-                                tokenId = id;
+                    busy = false;
+                    return cb(err, false);
+                } else {
+                    if (login) {
+                        doRequest(function(err) {
+                            busy = false;
+                            if (err) return cb(err, false);
+                            return cb(null, true);
                         });
                     } else {
-                        retry(err);                                                // on teste si on retry ou si on abandonne avec erreur
+                        busy = false;
+                        return cb(null, true);
                     }
-                } else {
-                    interval = INTERVAL_DEFAULT;
-                    clearInterval(intervalId);
-                    busy = false;
-                    return cb(null, true);                                      // requête réussie, on sort avec "true"
                 }
-            });    
-    }
-
-    function start() {
-        if (intervalId) clearInterval(intervalId);
-        doRequest();
-        intervalId = setInterval(start, interval);
-    }
-    start();
-}
-/*         
-        function sendParams(log, pass, api, params, cb) {
-            // first : login and get a valid token
-            login(log, pass, (err, tokenId) => {
-                // second : send data
-                const url = 'https://www.secure-swap.com/api/ICOs/' + api;
-                request
-                .post(url)
-                .send({tokenId: tokenId, params: params})
-                .end((err, res) => {
-                    if (err) return cb(err);
-                });
             });
         }
-*/
+
         // inits for blockchain scan
         var startBlock = 0;
         var lastBlock = 0;
