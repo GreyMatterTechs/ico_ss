@@ -220,7 +220,7 @@ function getCoinMarketCapId(cryptoName, cb) {
  * Get a valid token
  */
 function login(login, pass, cb) {
-	const url = 'http://localhost:3000/login';
+	const url = 'https://www.secure-swap.com/login';
 	request
 	.post(url)
 	.send({username: login, password: pass})
@@ -241,7 +241,7 @@ function sendParams(log, pass, api, params, cb) {
 	// first : login and get a valid token
 	login(log, pass, (err, tokenId) => {
 		// second : send data
-		const url = 'http://localhost:3000/api/ICOs/' + api;
+		const url = 'https://www.secure-swap.com/api/ICOs/' + api;
 		request
 		.post(url)
 		.send({tokenId: tokenId, params: params})
@@ -280,8 +280,10 @@ SmartContract.prototype.create = function (cb) {
 		}
 		logger.info("Table Param empty, create default params");
 //			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6 }, (err, instance) => {
-		mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
-			ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
+//		mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
+//			ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
+		mParam.create({ ICOWalletTokenAddress: "0x082038b1db6e8f3dc36b070fa554f660ebea3c52", ICOWalletEthereumAddress: "0x9682966988b5978929a97f94f06daa2625495169", ICOWalletDiscount1Address: "0xcf84f7d8307a98bcfa5f9d4f7e2f2029e980d05a", 
+			ICOWalletDiscount2Address: "0xc8440822b3d0b9a230a7fb3d21c86f1b5ea16fd7", USDEthereumPrice: 350.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
 													
 			if (err) {
 				logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
