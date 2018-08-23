@@ -469,7 +469,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
          * Get a valid token
          */
         function login(login, pass, cb) {
-            const url = 'https://www.secure-swap.com/login';
+            const url = 'https://staging.secure-swap.com/login';
             request
             .post(url)
             .send({username: login, password: pass})
@@ -495,7 +495,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
             function doRequest(callback) {
                 request
-                    .post('https://www.secure-swap.com/api/ICOs/' + api)
+                    .post('https://staging.secure-swap.com/api/ICOs/' + api)
                     .send({tokenId: tokenId, params: params})
                     .end((err, res) => {
                         if (err) {
