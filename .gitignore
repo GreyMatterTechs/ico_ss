@@ -20,3 +20,4 @@ npm-debug.log
 myData.json
 logs/*
 .node-xmlhttprequest*
+.vscode
