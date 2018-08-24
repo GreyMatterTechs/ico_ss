@@ -25,11 +25,19 @@
 		},
 		"TransactionGaz": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
 		},
 		"GazPice": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
 		},
 		"TokenContractTransactionHash": {
 			"type": "string",
@@ -41,55 +49,113 @@
 		},
 		"NbTokenToSell": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"double",
+				"precision": 30,
+				"scale": 18			
+			}
 		},
 		"NbTotalToken": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
 		},
 		"USDTokenPrice": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"double"
+			}
 		},
 		"USDEthereumPrice": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"double"
+			}
 		},
 		"Discount1Factor": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"double"
+			}
 		},
 		"Discount2Factor": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"double"
+			}
 		},
 		"NbTokenSold": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"double",
+				"precision": 30,
+				"scale": 18			
+			}
 		},
 		"NbEthereum": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"double",
+				"precision": 30,
+				"scale": 18			
+			}
 		},
 		"LastProcessedBlock": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
 		},
 		"BlockTokenStart": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
 		},
 		"NbBlockTransactionConfirmation": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"int"
+			}
 		},
 		"IcoDateStart": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
 		},
 		"IcoDateEnd": {
 			"type": "number",
-			"required": false
+			"required": false,
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
 		}
 	},
 	"hidden": [

@@ -21,22 +21,46 @@
       "type": "string"
     },
     "NonceIn": {
-      "type": "number"
+      "type": "number",
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
     },
     "NbEthereum": {
-      "type": "number"
+      "type": "number",
+			"mysql":
+			{
+				"dataType":"double",
+				"precision": 30,
+				"scale": 18			
+			}
     },
     "DiscountFactor": {
-      "type": "number"
+      "type": "number",
+			"mysql":
+			{
+				"dataType":"double"
+			}
     },
     "OutTransactionHash": {
       "type": "string"
     },
     "NonceOut": {
-      "type": "number"
+      "type": "number",
+			"mysql":
+			{
+				"dataType":"bigint"
+			}
     },
     "NbToken": {
-      "type": "number"
+      "type": "number",
+			"mysql":
+			{
+				"dataType":"double",
+				"precision": 30,
+				"scale": 18			
+			}
     },
     "DateTimeOut": {
       "type": "string"

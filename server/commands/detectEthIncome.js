@@ -443,7 +443,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         /**
         * Get crypto CoinMarketCap id
         */
-        function getCoinMarketCapId(cryptoName, cb) {
+       function getCoinMarketCapId(cryptoName, cb) {
             var url = config.cmcURI + '/listings/';
             request
             .get(url)
@@ -452,10 +452,16 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
                     var rep = JSON.parse(res.text);
                     var id = -1;
-                    rep.data.forEach(function(element) {
-                        if (element.name === cryptoName)
-                        {
+                    // rep.data.forEach(function(element) {
+                    //    if (element.name === cryptoName)
+                    //    {
+                    //        id = Number(element.id);
+                    //    }
+                    // });
+                    rep.data.some(function(element) {
+                        if (element.name === cryptoName) {
                             id = Number(element.id);
+                            return true;
                         }
                     });
                     return cb(null, id);
@@ -464,7 +470,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 }
             });
         }
-
+    
         /**
          * Get a valid token
          */

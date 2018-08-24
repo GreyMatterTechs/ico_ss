@@ -10,6 +10,7 @@
 		"port": "${SQL_PORT}",
 		"database": "${SQL_DBNAME}",
 		"user": "${SQL_USER}",
-		"password": "${SQL_PASS}"
+		"password": "${SQL_PASS}",
+		"supportBigNumbers": true
 	}
 }

@@ -130,7 +130,7 @@ async function WalletReceived(param, web3, cb) {
 									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, 
 									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dateIcoStart.getTime(), "IcoDateEnd": dateIcoEnd.getTime() }, function (err, instance) {
 				if (err) {
-					logger.error("Can't update param.attributes for param.id: " + param.id);
+					logger.error("Can't update param.attributes for param.id: " + param.id + " err:" + err);
 					return cb(err, null);
 				}
 				logger.info("New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance + " Token transaction block created: " + transactionReceipt.blockNumber + " TokenContractTransactionHash: " + secureswapContractInstance.transactionHash + " Contract address: " + secureswapContractInstance.address);
@@ -195,25 +195,31 @@ function getCotation(cryptoId, cb) {
 * Get crypto CoinMarketCap id
 */
 function getCoinMarketCapId(cryptoName, cb) {
-	var url = config.cmcURI + '/listings/';
-	request
-	.get(url)
-	.end((err, res) => {
-		if (err) return cb(err, null);
-		if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
-			var rep = JSON.parse(res.text);
-			var id = -1;
-			rep.data.forEach(function(element) {
-				if (element.name === cryptoName)
-				{
-					id = Number(element.id);
-				}
-			});
-			return cb(null, id);
-		} else {
-			return cb('request() error. url:' + url, null);
-		}
-	});
+    var url = config.cmcURI + '/listings/';
+    request
+    .get(url)
+    .end((err, res) => {
+        if (err) return cb(err, null);
+        if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+            var rep = JSON.parse(res.text);
+            var id = -1;
+            // rep.data.forEach(function(element) {
+            //    if (element.name === cryptoName)
+            //    {
+            //        id = Number(element.id);
+            //    }
+            // });
+            rep.data.some(function(element) {
+                if (element.name === cryptoName) {
+                    id = Number(element.id);
+                    return true;
+                }
+            });
+            return cb(null, id);
+        } else {
+            return cb('request() error. url:' + url, null);
+        }
+    });
 }
 
 /**
@@ -280,10 +286,10 @@ SmartContract.prototype.create = function (cb) {
 		}
 		logger.info("Table Param empty, create default params");
 //			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6 }, (err, instance) => {
-//		mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
-//			ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
-		mParam.create({ ICOWalletTokenAddress: "0x082038b1db6e8f3dc36b070fa554f660ebea3c52", ICOWalletEthereumAddress: "0x9682966988b5978929a97f94f06daa2625495169", ICOWalletDiscount1Address: "0xcf84f7d8307a98bcfa5f9d4f7e2f2029e980d05a", 
-			ICOWalletDiscount2Address: "0xc8440822b3d0b9a230a7fb3d21c86f1b5ea16fd7", USDEthereumPrice: 350.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
+		mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
+			ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
+//		mParam.create({ ICOWalletTokenAddress: "0x082038b1db6e8f3dc36b070fa554f660ebea3c52", ICOWalletEthereumAddress: "0x9682966988b5978929a97f94f06daa2625495169", ICOWalletDiscount1Address: "0xcf84f7d8307a98bcfa5f9d4f7e2f2029e980d05a", 
+//			ICOWalletDiscount2Address: "0xc8440822b3d0b9a230a7fb3d21c86f1b5ea16fd7", USDEthereumPrice: 350.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
 													
 			if (err) {
 				logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
