@@ -42,8 +42,8 @@
     "nsp": "^3.2.1"
   },
   "repository": {
-    "type": "",
-    "url": ""
+    "type": "git",
+    "url": "https://github.com/GreyMatterTechs/ico_ss"
   },
   "license": "UNLICE"
 }

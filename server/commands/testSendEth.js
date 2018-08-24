@@ -1,8 +1,10 @@
 'use strict';
 
-const Web3 = require('web3');
-const Tx = require('ethereumjs-tx');
-const Async = require("async");
+const Web3		= require('web3');
+const Tx		= require('ethereumjs-tx');
+const Async		= require("async");
+const path		= require('path');
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 
 var appname;
 var mParam;
@@ -28,7 +30,7 @@ TestSendEthereum.prototype.Init = function (cb) {
 
   // connection to local node
   // set the provider you want from Web3.providers
-  var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
+  var web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));
 
   // function for transfert ethereum from owner to destinatire
   function transfertEthereum(ethOwner, ethDestinataire, eth){

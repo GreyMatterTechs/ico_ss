@@ -9,7 +9,7 @@ const Fs		= require("fs");
 const abiDecoder= require("abi-decoder");
 const Async		= require("async");
 const request   = require('superagent');
-const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 var appname;
@@ -32,7 +32,7 @@ var KillContract = function (_server, _appname) {
     appname = _appname;
     mParam = _server.models.Param;
     mParamBackup = _server.models.ParamBackup;
-    mTransaction = _server.models.transaction;
+    mTransaction = _server.models.Transaction;
 };
 
 KillContract.prototype.Init = function (cb) {
@@ -40,10 +40,10 @@ KillContract.prototype.Init = function (cb) {
 
     // connection to local node
     // set the provider you want from Web3.providers
-    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
+    var web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));  
   
     // we compile the contract source code for have the contract abi  
-    let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
+    let source = Fs.readFileSync(path.join(`${appRoot}`, 'server', 'commands', 'SecureSwapToken.sol'), 'utf8');
     let compiledContract = Solc.compile(source, 1);
     if (compiledContract.errors != undefined)
     {

@@ -2,7 +2,7 @@
 
 var path        = require('path');
 var debug       = require('debug')('icodb:sc');
-var config      = require(path.join(__dirname, '../config' + (process.env.NODE_ENV !== 'development' ? ('.' + process.env.NODE_ENV) : '') + '.json'));
+var config      = require(path.join(__dirname, '../config' + (process.env.NODE_ENV !== 'development' ? ('.' + process.env.NODE_ENV) : '') + '.js'));
 var async       = require('async');
 var request     = require('superagent');
 var fs          = require('fs');
@@ -53,7 +53,7 @@ SmartContract.prototype.create = function (cb) {
     var tokenInitialOwnerAdresse = '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1';
     console.log("Inital token owner is: ", tokenInitialOwnerAdresse);
     
-    let source = Fs.readFileSync('SecureSwapToken.sol', 'utf8');
+    let source = Fs.readFileSync(path.join(`${appRoot}`, 'server', 'commands', 'SecureSwapToken.sol'), 'utf8');
     let compiledContract = Solc.compile(source, 1);
     if (compiledContract.errors != undefined)
     {

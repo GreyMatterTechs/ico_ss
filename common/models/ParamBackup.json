@@ -1,6 +1,6 @@
 {
 	"name": "ParamBackup",
-	"plural": "ParamsBackups",
+	"plural": "ParamBackups",
 	"base": "PersistedModel",
 	"idInjection": true,
 	"options": {

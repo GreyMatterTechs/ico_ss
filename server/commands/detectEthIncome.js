@@ -9,7 +9,7 @@ const Fs		= require("fs");
 const abiDecoder= require("abi-decoder");
 const Async		= require("async");
 const request   = require('superagent');
-const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 var appname;
@@ -33,7 +33,7 @@ var DetectEthereumIncome = function (_server, _appname) {
     appname = _appname;
     mParam = _server.models.Param;
     mParamBackup = _server.models.ParamBackup;
-    mTransaction = _server.models.transaction;
+    mTransaction = _server.models.Transaction;
     mReferrer = _server.models.Referrer;
 };
 
@@ -42,10 +42,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
     // connection to local node
     // set the provider you want from Web3.providers
-    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
+    var web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));  
   
     // we compile the contract source code for have the contract abi  
-    let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
+    let source = Fs.readFileSync(path.join(`${appRoot}`, 'server', 'commands', 'SecureSwapToken.sol'), 'utf8');
     let compiledContract = Solc.compile(source, 1);
     if (compiledContract.errors != undefined)
     {
@@ -184,7 +184,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             {
                 icoState += 1;
             }
-            sendParams('sswp', 'Xv4hmDly', 'setState', { "state": icoState }, (err, responseTxt) => {});
+            sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
         }
 
         // display transactions
@@ -257,7 +257,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             ethTotal:       ethereumReceived,
                             tokensSold:     nbTokenSold
                         }
-                        sendParams('sswp', 'Xv4hmDly', 'setReceivedEth', paramsUpdated, (err, responseTxt) => {
+                        sendParams('setReceivedEth', paramsUpdated, (err, responseTxt) => {
                             if (err) return err;
                         });
 
@@ -426,7 +426,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         */
        
         function getCotation(cryptoId, cb) {
-            var url = 'https://api.coinmarketcap.com/v2/ticker/' + cryptoId + '/?convert=EUR';
+            var url = config.cmcURI + '/ticker/' + cryptoId + '/?convert=EUR';
             request
             .get(url)
             .query({convert: 'EUR'})
@@ -444,7 +444,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         * Get crypto CoinMarketCap id
         */
         function getCoinMarketCapId(cryptoName, cb) {
-            var url = 'https://api.coinmarketcap.com/v2/listings/';
+            var url = config.cmcURI + '/listings/';
             request
             .get(url)
             .end((err, res) => {
@@ -469,7 +469,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
          * Get a valid token
          */
         function login(login, pass, cb) {
-            const url = 'https://staging.secure-swap.com/login';
+            const url = config.webURI + '/login';
             request
             .post(url)
             .send({username: login, password: pass})
@@ -489,18 +489,18 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var tokenId = '';
         var busy    = false;
 
-        function sendParams(log, pass, api, params, cb) {
+        function sendParams(api, params, cb) {
             if (busy) return cb('busy', false);
             busy = true;
 
             function doRequest(callback) {
                 request
-                    .post('https://staging.secure-swap.com/api/ICOs/' + api)
+                    .post(config.webURI + '/api/ICOs/' + api)
                     .send({tokenId: tokenId, params: params})
                     .end((err, res) => {
                         if (err) {
                             if (err.status === 401 && err.code === 'INVALID_TOKEN') {            // token invalide
-                                login(log, pass, (err, id) => {
+                                login(config.webUser, config.webPass, (err, id) => {
                                     if (err) return callback(err);
                                     tokenId = id;
                                     return callback(null, true);
@@ -651,7 +651,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                 if (adjustedBalance <= (totalToken - totalTokenToSend) && checkMode == false) {
                     icoState = 3;
-                    sendParams('sswp', 'Xv4hmDly', 'setState', { "state": icoState }, (err, responseTxt) => {});
+                    sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
                 }
@@ -677,7 +677,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     dateEnd:  		icoDateEnd
                 }
     
-                sendParams("sswp", "Xv4hmDly", "setParams", Webparams, (err, responseTxt) => {
+                sendParams("setParams", Webparams, (err, responseTxt) => {
                     if (err) return err;
                 });
 

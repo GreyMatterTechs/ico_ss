@@ -14,42 +14,42 @@
     ]
   },
   "User": {
-    "dataSource": "db",
+    "dataSource": "dbMemory",
     "public": false
   },
   "AccessToken": {
-    "dataSource": "db",
+    "dataSource": "dbMemory",
     "public": false
   },
   "ACL": {
-    "dataSource": "db",
+    "dataSource": "dbMemory",
     "public": false
   },
   "RoleMapping": {
-    "dataSource": "db",
+    "dataSource": "dbMemory",
     "public": false,
     "options": {
       "strictObjectIDCoercion": true
     }
   },
   "Role": {
-    "dataSource": "db",
+    "dataSource": "dbMemory",
     "public": false
   },
   "Param": {
-    "dataSource": "db",
+    "dataSource": "dbSql",
     "public": true
   },
-  "transaction": {
-    "dataSource": "db",
+  "Transaction": {
+    "dataSource": "dbSql",
     "public": true
   },
   "ParamBackup": {
-    "dataSource": "db",
+    "dataSource": "dbSql",
     "public": true
   },
   "Referrer": {
-    "dataSource": "db",
+    "dataSource": "dbSql",
     "public": true
   }
 }

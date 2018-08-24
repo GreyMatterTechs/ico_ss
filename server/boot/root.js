@@ -4,7 +4,7 @@ const path		= require('path');
 const appRoot	= require('app-root-path');
 const requestIp	= require('request-ip');
 const geoip		= require('geoip-lite');
-const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 function isString(val) {
@@ -36,10 +36,26 @@ function shorten2(str, len) {
 	}
 }
 
+
+function hrtime2human(diff) {
+	const num = diff[0] * 1e9 + diff[1];
+	if (num < 1e3) {
+		return num + ' ns';
+	} else if (num >= 1e3 && num < 1e6) {
+		return num / 1e3 + ' µs';
+	} else if (num >= 1e6 && num < 1e9) {
+		return num / 1e6 + ' ms';
+	} else if (num >= 1e9) {
+		return num / 1e9 + ' s';
+	}
+};
+
+
 module.exports = function(server) {
 
-	server.locals.env = process.env.NODE_ENV;
-	server.locals.db = server.dataSources.db.settings.host ? server.dataSources.db.settings.host : server.dataSources.db.settings.file;
+	server.locals.env		= config.currentEnv;
+	server.locals.dbMem		= server.dataSources.dbMemory.settings.host ? server.dataSources.dbMemory.settings.host : 'local';
+	server.locals.dbSql		= server.dataSources.dbSql.settings.host ? server.dataSources.dbSql.settings.host : 'local';
 
 	var router	= server.loopback.Router();
 
@@ -48,14 +64,18 @@ module.exports = function(server) {
 	// ------------------------------------------------
 
 	router.get('/*', function(req, res, next) {
-		var ip = requestIp.getClientIp(req);
-		var geo = geoip.lookup(ip);
-		if (geo) {
-			console.log(config.appName + ' received request: '+shorten(req.url,64)+' from : '+ip+' ('+geo.city+' '+geo.zip+' '+geo.region+' '+geo.country+')' );
-		} else {
-			console.log(config.appName + ' received request: '+shorten(req.url,64)+' from : '+ip+' (geolocalisation failed)' );
+		if (config.trackIP) {
+			const time = process.hrtime();
+			const ip = requestIp.getClientIp(req);
+			const geo = geoip.lookup(ip);
+			const diff = process.hrtime(time);
+			if (geo) {
+				logger.info('Received request: ' + shorten(req.url, 64) + ' from: ' + ip + ' (' + geo.city + ',' + geo.region + ',' + geo.country + ') [geoip: ' + hrtime2human(diff) + ']');
+			} else {
+				logger.info('Received request: ' + shorten(req.url, 64) + ' from: ' + ip + ' (machine locale) [geoip: ' + hrtime2human(diff) + ']');
+			}
 		}
-		if (req.url.indexOf('/img/') === 0 || req.url.indexOf('/css/') === 0) {
+		if (req.url.indexOf('assets/images') >= 0 || req.url.indexOf('assets/css/') >= 0) {
 			res.setHeader('Cache-Control', 'public, max-age=2592000');
 			res.setHeader('Expires', new Date(Date.now() + 2592000000).toUTCString());
 		}

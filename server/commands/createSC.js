@@ -7,7 +7,7 @@ const Fs        = require('fs');
 const Solc      = require('solc');
 const Async		= require("async");
 const request   = require('superagent');
-const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 var mParam;
@@ -56,7 +56,7 @@ async function WalletReceived(param, web3, cb) {
 	var tokenInitialOwnerAddress = param.ICOWalletTokenAddress;
 	logger.info("Inital token owner is: " + tokenInitialOwnerAddress);
 
-	let source = Fs.readFileSync('server/commands/SecureSwapToken.sol', 'utf8');
+	let source = Fs.readFileSync(path.join(`${appRoot}`, 'server', 'commands', 'SecureSwapToken.sol'), 'utf8');
 	let compiledContract = Solc.compile(source, 1);
 	if (compiledContract.errors !== undefined) {
         logger.error("Error or warning during contract compilation: " + JSON.stringify(compiledContract.errors));
@@ -166,7 +166,7 @@ async function WalletReceived(param, web3, cb) {
 				dateEnd:  		dateIcoEnd.getTime()
 			}
 
-			sendParams("sswp", "Xv4hmDly", "setParams", params, (err, responseTxt) => {
+			sendParams("setParams", params, (err, responseTxt) => {
 				if (err) return err;
 			});
 		});
@@ -177,7 +177,7 @@ async function WalletReceived(param, web3, cb) {
 * Get crypto quote on CoinMarketCap, in USD and in EUR
 */
 function getCotation(cryptoId, cb) {
-	var url = 'https://api.coinmarketcap.com/v2/ticker/' + cryptoId + '/?convert=EUR';
+	var url = config.cmcURI + '/ticker/' + cryptoId + '/?convert=EUR';
 	request
 	.get(url)
 	.query({convert: 'EUR'})
@@ -195,7 +195,7 @@ function getCotation(cryptoId, cb) {
 * Get crypto CoinMarketCap id
 */
 function getCoinMarketCapId(cryptoName, cb) {
-	var url = 'https://api.coinmarketcap.com/v2/listings/';
+	var url = config.cmcURI + '/listings/';
 	request
 	.get(url)
 	.end((err, res) => {
@@ -220,7 +220,7 @@ function getCoinMarketCapId(cryptoName, cb) {
  * Get a valid token
  */
 function login(login, pass, cb) {
-	const url = 'https://staging.secure-swap.com/login';
+	const url = config.webURI + '/login';
 	request
 	.post(url)
 	.send({username: login, password: pass})
@@ -237,11 +237,11 @@ function login(login, pass, cb) {
 /**
  * Send data on public website API
  */
-function sendParams(log, pass, api, params, cb) {
+function sendParams(api, params, cb) {
 	// first : login and get a valid token
-	login(log, pass, (err, tokenId) => {
+	login(config.webUser, config.webPass, (err, tokenId) => {
 		// second : send data
-		const url = 'https://staging.secure-swap.com/api/ICOs/' + api;
+		const url = config.webURI + '/api/ICOs/' + api;
 		request
 		.post(url)
 		.send({tokenId: tokenId, params: params})
@@ -270,7 +270,7 @@ function sendParams(log, pass, api, params, cb) {
 SmartContract.prototype.create = function (cb) {
 	logger.info(config.appName + ': Creating...');
     
-  	var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
+  	var web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));  
   
 	// get parameters from table Param
 	mParam.destroyAll(function(err, param) {
@@ -308,7 +308,7 @@ SmartContract.prototype.create = function (cb) {
 SmartContract.prototype.cleanTransaction = function (cb) {
 	logger.info(config.appName + ': Clean Transaction...');
     
-  	var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8101"));  
+  	var web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));  
   
 	// delete all transactions in transaction table
 	mTransaction.destroyAll(function(err, info) {

@@ -1,6 +1,6 @@
 {
-  "name": "transaction",
-  "plural": "transactions",
+  "name": "Transaction",
+  "plural": "Transactions",
   "base": "PersistedModel",
   "idInjection": true,
   "options": {

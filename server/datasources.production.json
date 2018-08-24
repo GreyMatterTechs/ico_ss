@@ -1,16 +1,13 @@
 {
 	"dbMemory": {
-		"name": "db",
-		"connector": "memory",
-		"file": "myData.json"
-	  },
-	  "db": {
-		"name": "mysqldb",
-		"host": "localhost",
-		"port": 3306,
-		"database": "database_name",
+		"name": "dbMemory",
+		"connector": "memory"
+	},
+	"dbSql": {
+		"name": "dbSql",
 		"connector": "mysql",
-		"user": "ton_user",
-		"password": "ton-pass"
-	  }
+		"url": "${SQL_URL}",
+		"user": "${SQL_USER}",
+		"password": "${SQL_PASS}"
+	}
 }

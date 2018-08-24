@@ -20,7 +20,7 @@ const CryptoJS	= require('crypto-js');
 const sha3		= require('crypto-js/sha3');
 var async		= require('async');
 const g			= reqlocal(path.join('node_modules', 'loopback', 'lib', 'globalize'));
-const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.json'));
+const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 
 // ------------------------------------------------------------------------------------------------------

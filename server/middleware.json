@@ -54,15 +54,11 @@
       {
         "paths": "/client",
         "params": "$!../client"
-      },
-      {
-        "paths": "/storage",
-        "params": "$!../storage"
       }
     ]
   },
   "final": {
-    "./middleware/url-not-found-handler": {}
+    "./middleware/urlNotFoundHandler": {}
   },
   "final:after": {
     "strong-error-handler": {
