@@ -65,6 +65,8 @@ app.start = function(httpOnly) {
 		logger.info('NodeJS server URL: ' + 'http://' + config.host + ':' + port);
 		logger.info('Nginx  server URL: ' + 'http://' + config.nginxhost + ':' + config.nginxport);
 
+		logger.warn(JSON.stringify(app.dataSources.dbSql.settings));
+
 		if (app.get('loopback-component-explorer')) {
 			var explorerPath = app.get('loopback-component-explorer').mountPath;
 			logger.info('Browse your REST API at ' + baseUrl + explorerPath);
