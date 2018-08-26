@@ -32,5 +32,19 @@ module.exports = {
 	cmcURI: process.env.CMC_URI,
 	trackIP: true,
 	logger2console: true,
-	web3Provider: process.env.WEB3_PROVIDER
+	web3Provider: process.env.WEB3_PROVIDER,
+	walletTokenAddress: process.env.WALLET_TOKEN_ADDRESS,
+	walletEthereumAddress: process.env.WALLET_ETHEREUM_ADDRESS,
+	walletDiscount1Address: process.env.WALLET_DISCOUNT1_ADDRESS,
+	walletDiscount2Address: process.env.WALLET_DISCOUNT2_ADRESSE,
+	usdEthereumPrice: process.env.USD_ETHEREUM_PRICE,
+	usdTokenPrice: process.env.USD_TOKEN_PRICE,
+	discount1Factor: process.env.DISCOUNT1_FACTOR,
+	discount2Factor: process.env.DISCOUNT2_FACTOR,
+	transactionGaz: process.env.TRANSACTION_GAZ,
+	gazPrice: process.env.GAZ_PRICE,
+	dateIcoStart: process.env.DATE_ICO_START,
+	dateIcoEnd: process.env.DATE_ICO_END,
+	softCap: process.env.SOFT_CAP,
+	hardCap: process.env.HARD_CAP
 };

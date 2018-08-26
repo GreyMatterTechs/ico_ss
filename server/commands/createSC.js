@@ -104,9 +104,9 @@ async function WalletReceived(param, web3, cb) {
 	var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
-	var ethereumPrice = 475;
-	var dateIcoStart = new Date("2018-09-29T00:00:00.000Z");
-	var dateIcoEnd = new Date("2018-12-31T00:00:00.000Z")
+	var ethereumPrice = config.usdEthereumPrice;
+	var dateIcoStart = new Date(config.dateIcoStart);
+	var dateIcoEnd = new Date(config.dateIcoEnd);
 
 	getCoinMarketCapId("Ethereum", (err, id) => {
 		if (id === null || id === -1)
@@ -125,7 +125,6 @@ async function WalletReceived(param, web3, cb) {
 				logger.error("Can't read Ethereum cotation on CoinMarketCap, use old value: " + ethereumPrice);
 			}
 
-			// AS ajouter contract adresse dans la table
 			param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "TokenContractAddress" : secureswapContractInstance.address, "NbTotalToken": adjustedBalance, "NbTokenToSell": 80000000, 
 									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, 
 									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dateIcoStart.getTime(), "IcoDateEnd": dateIcoEnd.getTime() }, function (err, instance) {
@@ -153,13 +152,13 @@ async function WalletReceived(param, web3, cb) {
 			 */
 			var params = {
 				state:			stateIco,
-				wallet:			tokenInitialOwnerAddress,
-				tokenName:  	"SSW",
+				wallet:			"",
+				tokenName:  	tokenSymbol,
 				tokenPriceUSD:	tokenPriceUSD.toNumber(),
 				tokenPriceETH:	tokenPriceETH.toNumber(),
-				softCap:		10000000,
-				hardCap:  		80000000,
-				tokensTotal:  	100000000,
+				softCap:		config.softCap,
+				hardCap:  		config.hardCap,
+				tokensTotal:  	adjustedBalance,
 				ethTotal:   	0,
 				tokensSold:  	0,
 				dateStart:   	dateIcoStart.getTime(),
@@ -285,12 +284,8 @@ SmartContract.prototype.create = function (cb) {
 			return cb("Error occurs when cleaning param table. error: " + JSON.stringify(err), null);
 		}
 		logger.info("Table Param empty, create default params");
-//			mParam.create({ ICOWalletTokenAddress: "0x10b0afcadd2de0cc4e6418d8d234075de0710384", ICOWalletEthereumAddress: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, TransactionGaz: 150000, GazPice: 6 }, (err, instance) => {
-		mParam.create({ ICOWalletTokenAddress: "0x4e80dd9239327e74ea156ef1caa9e9abcfa179f9", ICOWalletEthereumAddress: "0x4c0af32cd1d1721a6c6f191bc9ba127926467930", ICOWalletDiscount1Address: "0xfdccc6008e99ea09392600ebf72ad7b30c4b73c4", 
-			ICOWalletDiscount2Address: "0x21953969bb5a33697502756ca3129566d03b6490", USDEthereumPrice: 600.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
-//		mParam.create({ ICOWalletTokenAddress: "0x082038b1db6e8f3dc36b070fa554f660ebea3c52", ICOWalletEthereumAddress: "0x9682966988b5978929a97f94f06daa2625495169", ICOWalletDiscount1Address: "0xcf84f7d8307a98bcfa5f9d4f7e2f2029e980d05a", 
-//			ICOWalletDiscount2Address: "0xc8440822b3d0b9a230a7fb3d21c86f1b5ea16fd7", USDEthereumPrice: 350.0, USDTokenPrice: 0.44, Discount1Factor: 0.9, Discount2Factor: 0.8, TransactionGaz: 128000, GazPice: 42}, (err, instance) => {
-													
+		mParam.create({ ICOWalletTokenAddress: config.walletTokenAddress, ICOWalletEthereumAddress: config.walletEthereumAddress, ICOWalletDiscount1Address: config.walletDiscount1Address, 
+			ICOWalletDiscount2Address: config.walletDiscount2Address, USDEthereumPrice: config.usdEthereumPrice, USDTokenPrice: config.usdTokenPrice, Discount1Factor: config.discount1Factor, Discount2Factor: config.discount2Factor, TransactionGaz: config.transactionGaz, GazPice: config.gazPrice}, (err, instance) => {
 			if (err) {
 				logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
 				return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);

@@ -238,7 +238,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         var ajustedTokenPrice = web3.toBigNumber(tokenPriceEth * discountFactor);
                         var nbTokenToTransfert = nbEth.dividedBy(ajustedTokenPrice);
                         var nbTokenUnitToTransfert = nbTokenToTransfert.times(Math.pow(10, decimal));
-                        logger.info(" -> Send: " + nbTokenToTransfert.toNumber().toFixed(8) + " SSWT to " + e.from + " with discount factor: " + discountFactor);
+                        logger.info(" -> Send: " + nbTokenToTransfert.toNumber().toFixed(8) + " SSW to " + e.from + " with discount factor: " + discountFactor);
 
                         if (!missingToken) {
                             ethereumReceived += nbEth.toNumber();
@@ -505,7 +505,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     .send({tokenId: tokenId, params: params})
                     .end((err, res) => {
                         if (err) {
-                            if (err.status === 401 && err.code === 'INVALID_TOKEN') {            // token invalide
+                            if (err.status === 401 /* && err.code === 'INVALID_TOKEN' */) {            // token invalide
                                 login(config.webUser, config.webPass, (err, id) => {
                                     if (err) return callback(err);
                                     tokenId = id;
@@ -670,13 +670,13 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                  */
                 var Webparams = {
                     state:			icoState,
-                    wallet:			ICOWalletTokenAddress,
+                    wallet:			icoState === 2 ? ICOWalletTokenAddress : "",
                     tokenName:  	"SSW",
                     tokenPriceUSD:	tokenPriceUSD.toNumber(),
                     tokenPriceETH:	tokenPriceEth.toNumber(),
-                    softCap:		10000000,
-                    hardCap:  		80000000,
-                    tokensTotal:  	100000000,
+                    softCap:		config.sofCap,
+                    hardCap:  		config.hardCap,
+                    tokensTotal:  	totalToken,
                     ethTotal:   	params[0].NbEthereum,
                     tokensSold:  	params[0].NbTokenSold,
                     dateStart:   	icoDateStart,
