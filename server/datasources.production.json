@@ -7,6 +7,9 @@
 		"name": "dbSql",
 		"connector": "mysql",
 		"url": "${SQL_URL}",
+		"host": "${SQL_HOST}",
+		"port": "${SQL_PORT}",
+		"database": "${SQL_DBNAME}",
 		"user": "${SQL_USER}",
 		"password": "${SQL_PASS}",
 		"supportBigNumbers": true
