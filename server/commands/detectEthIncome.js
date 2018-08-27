@@ -82,6 +82,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var icoDateStart = params[0].IcoDateStart;
         var icoDateEnd = params[0].IcoDateEnd;
         var icoState = 1;
+        var oldWebparams;
 
         logger.info("Inital token owner is: " + ICOWalletTokenAddress + " ethereum receiver: " + ICOWalletEthereumAddress + " ICOWalletDiscount1Address: " + ICOWalletDiscount1Address + " ICOWalletDiscount2Address: " + ICOWalletDiscount2Address + " Discount1Factor: " + Discount1Factor + " Discount2Factor: " + Discount2Factor, + " IcoDateStart:" + new Date(icoDateStart).toUTCString() + " IcoDateStop:" + new Date(icoDateEnd).toUTCString());
         
@@ -175,16 +176,21 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
     
         function SendIcoState(IcoDateStart, IcoDateEnd)
         {
-            icoState = 1;
+            var newIcoState = 1;
             if (IcoDateStart < new Date().getTime())
             {
-                icoState += 1;
+                newIcoState += 1;
             }
             if (IcoDateEnd < new Date().getTime())
             {
-                icoState += 1;
+                newIcoState += 1;
             }
-            sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
+
+            if (newIcoState != icoState)
+            {
+                sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
+                icoState = newIcoState;
+            }
         }
 
         // display transactions
@@ -255,7 +261,9 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             state:          icoState,
                             ethReceived:    nbEth,
                             ethTotal:       ethereumReceived,
-                            tokensSold:     nbTokenSold
+                            tokensSold:     nbTokenSold,
+                            tokenPriceUSD:	tokenPriceUSD.toNumber(),
+                            tokenPriceETH:	tokenPriceEth.toNumber(),
                         }
                         sendParams('setReceivedEth', paramsUpdated, (err, responseTxt) => {
                             if (err) return err;
@@ -313,7 +321,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
         function transCreateCB(nbToken, err, instance) {
             if (err) {
-                logger.error("Error occurs when adding transaction in table(for input transaction hash: " + e.hash + ") error: " + JSON.stringify(err));
+                logger.error("Error occurs when adding transaction in table(for input transaction hash: " + instance.InTransactionHash + ") error: " + JSON.stringify(err));
             }
             else
             {
@@ -323,12 +331,12 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
         function transUpdateCB(nbToken, err, instances) {
             if (err) {
-                logger.error("Error occurs when find transaction in table(for input transaction hash: " + e.hash + ") for mising token send, error: " + JSON.stringify(err));
+                logger.error("Error occurs when find transaction in table(for input transaction hash: " + instance.InTransactionHash + ") for mising token send, error: " + JSON.stringify(err));
             }
             else
             {
                 if (instances.length != 1) {
-                    logger.error("Many instance found (" + instances.length + ") when find transaction in table(for input transaction hash: " + e.hash + ") for mising token send");
+                    logger.error("Many instance found (" + instances.length + ") when find transaction in table(for input transaction hash: " + instance.InTransactionHash + ") for mising token send");
                 }
                 else {
                     sendToken(instances[0], nbToken);
@@ -563,6 +571,28 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
         var nbTokenSold = totalToken - adjustedBalance;;
 
+        /**
+         * Send ICO params to website
+         */
+        var Webparams = {
+            state:			icoState,
+            wallet:			icoState === 2 ? ICOWalletTokenAddress : "",
+            tokenName:  	"SSW",
+            tokenPriceUSD:	tokenPriceUSD.toNumber(),
+            tokenPriceETH:	tokenPriceEth.toNumber(),
+            softCap:		config.softCap,
+            hardCap:  		config.hardCap,
+            tokensTotal:  	totalToken,
+            ethTotal:   	params[0].NbEthereum,
+            tokensSold:  	params[0].NbTokenSold,
+            dateStart:   	icoDateStart,
+            dateEnd:  		icoDateEnd
+        }
+
+        sendParams("setParams", Webparams, (err, responseTxt) => {
+            if (err) return err;
+        });
+
         mTransaction.find(function(err, procTrans) {
             if (err){
                 return cb(err, null);
@@ -656,36 +686,17 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 }
 
                 if (adjustedBalance <= (totalToken - totalTokenToSend) && checkMode == false) {
-                    icoState = 3;
-                    sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
+                    if (icoState !== 3)
+                    {
+                        icoState = 3;
+                        sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
+                    }
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
                 }
                 else if (checkMode == false) {
                     SendIcoState(icoDateStart, icoDateEnd);
                 }
-
-                /**
-                 * Send ICO params to website
-                 */
-                var Webparams = {
-                    state:			icoState,
-                    wallet:			icoState === 2 ? ICOWalletTokenAddress : "",
-                    tokenName:  	"SSW",
-                    tokenPriceUSD:	tokenPriceUSD.toNumber(),
-                    tokenPriceETH:	tokenPriceEth.toNumber(),
-                    softCap:		config.sofCap,
-                    hardCap:  		config.hardCap,
-                    tokensTotal:  	totalToken,
-                    ethTotal:   	params[0].NbEthereum,
-                    tokensSold:  	params[0].NbTokenSold,
-                    dateStart:   	icoDateStart,
-                    dateEnd:  		icoDateEnd
-                }
-    
-                sendParams("setParams", Webparams, (err, responseTxt) => {
-                    if (err) return err;
-                });
 
                 // Process blockchain block
                 if (checkMode === 0) {

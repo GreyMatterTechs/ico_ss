@@ -19,6 +19,5 @@ node_modules
 npm-debug.log
 myData.json
 logs/*
-.vscode/*
 .node-xmlhttprequest*
 .vscode
