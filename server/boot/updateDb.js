@@ -70,6 +70,8 @@ function create(ds, dsName, tables, cb) {
  */
 module.exports = function(app) {
 
+	logger.warn('dataSources: ' + JSON.stringify(app.dataSources.dbSql.settings));
+
 	if (process.env.NODE_ENV === 'production') return;	// on touche à rien
 
 	mParam = app.models.Param;
