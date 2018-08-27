@@ -11,7 +11,6 @@
 		"database": "${SQL_DBNAME}",
 		"user": "${SQL_USER}",
 		"password": "${SQL_PASS}",
-		"supportBigNumbers": true,
-		"debug": true
+		"supportBigNumbers": true
 	}
 }
