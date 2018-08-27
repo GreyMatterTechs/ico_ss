@@ -69,6 +69,7 @@ function create(ds, dsName, tables, cb) {
  * @api public
  */
 module.exports = function(app) {
+
 	if (process.env.NODE_ENV === 'production') return;	// on touche à rien
 
 	mParam = app.models.Param;
