@@ -698,6 +698,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     SendIcoState(icoDateStart, icoDateEnd);
                 }
 
+                if (nbTokenSold < totalToken - adjustedBalance) {
+                    logger.error("ATTENTION!!! Le nombre de tokens vendus: " + nbTokenSold + " ne correspond pas au nombre de tokens vendus deduit de la balance du wallet: " + (totalToken - adjustedBalance), " il en manque: " + ((totalToken - adjustedBalance) - nbTokenSold));
+                }
+
                 // Process blockchain block
                 if (checkMode === 0) {
                     var newLastBlock = web3.eth.blockNumber;
