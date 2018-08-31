@@ -11,6 +11,8 @@ const Async		= require("async");
 const request   = require('superagent');
 const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
+const math      = require("mathjs");
+
 
 var appname;
 var mParam;
@@ -73,6 +75,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             return;
         }
         // wallet adresse & private key and contract transaction hash used for create the token
+        var tokenContractAddress = params[0].TokenContractAddress;
         var ICOWalletEthereumAddress = params[0].ICOWalletEthereumAddress;
         var ICOWalletTokenAddress = params[0].ICOWalletTokenAddress;
         var ICOWalletDiscount1Address = params[0].ICOWalletDiscount1Address;
@@ -119,6 +122,13 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var transactionReceipt = web3.eth.getTransactionReceipt(tokenContractTransactionHash);
         if (transactionReceipt === null) {
             logger.error("Problem with smart-contrat, transaction receipt can't be obtened, check token contract deploy on node and contrat transaction hash on Param table!");
+            return;
+        }
+
+        // check validity of contractAddresse
+        if (tokenContractAddress !== transactionReceipt.contractAddress)
+        {
+            logger.error("Problem with smart-contrat, contract address on params table is not the same we get by transactionReceipt!");
             return;
         }
 
@@ -188,8 +198,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
             if (newIcoState != icoState)
             {
-                sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
                 icoState = newIcoState;
+                sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
             }
         }
 
@@ -504,37 +514,37 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var busy    = false;
 
         function sendParams(api, params, cb) {
-            if (busy) return cb('busy', false);
+//            if (busy) return cb('busy', false);
             busy = true;
 
-            function doRequest(callback) {
+            function doRequest(ap, par,callback) {
                 request
-                    .post(config.webURI + '/api/ICOs/' + api)
-                    .send({tokenId: tokenId, params: params})
+                    .post(config.webURI + '/api/ICOs/' + ap)
+                    .send({tokenId: tokenId, params: par})
                     .end((err, res) => {
                         if (err) {
                             if (err.status === 401 /* && err.code === 'INVALID_TOKEN' */) {            // token invalide
                                 login(config.webUser, config.webPass, (err, id) => {
                                     if (err) return callback(err);
                                     tokenId = id;
-                                    return callback(null, true);
+                                    return callback(null, ap, par, true);
                                 });
                             } else {
                                 return callback(err);
                             }
                         } else {
-                            return callback(null, false);                                // requête réussie, on sort avec "true"
+                            return callback(null, ap, par, false);                                // requête réussie, on sort avec "true"
                         }
                     });    
             }
 
-            doRequest(function(err, login) {
+            doRequest(api, params, function(a, p, err, login) {
                 if (err) {
                     busy = false;
                     return cb(err, false);
                 } else {
                     if (login) {
-                        doRequest(function(err) {
+                        doRequest(a, p, function(err) {
                             busy = false;
                             if (err) return cb(err, false);
                             return cb(null, true);
@@ -544,7 +554,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         return cb(null, true);
                     }
                 }
-            });
+            }.bind(null, api, params));
         }
 
         // inits for blockchain scan
@@ -571,12 +581,15 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
         var nbTokenSold = totalToken - adjustedBalance;;
 
+        SendIcoState(icoDateStart, icoDateEnd);
+
         /**
          * Send ICO params to website
          */
         var Webparams = {
             state:			icoState,
             wallet:			icoState === 2 ? ICOWalletTokenAddress : "",
+            contractAddress: icoState > 1 ? transactionReceipt.contractAddress : "",
             tokenName:  	"SSW",
             tokenPriceUSD:	tokenPriceUSD.toNumber(),
             tokenPriceETH:	tokenPriceEth.toNumber(),
@@ -698,7 +711,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     SendIcoState(icoDateStart, icoDateEnd);
                 }
 
-                if (nbTokenSold < totalToken - adjustedBalance) {
+                if (math.ceil(nbTokenSold) < (totalToken - adjustedBalance)) {
                     logger.error("ATTENTION!!! Le nombre de tokens vendus: " + nbTokenSold + " ne correspond pas au nombre de tokens vendus deduit de la balance du wallet: " + (totalToken - adjustedBalance), " il en manque: " + ((totalToken - adjustedBalance) - nbTokenSold));
                 }
 

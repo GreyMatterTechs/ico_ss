@@ -151,18 +151,19 @@ async function WalletReceived(param, web3, cb) {
 			 * Send ICO params to website
 			 */
 			var params = {
-				state:			stateIco,
-				wallet:			"",
-				tokenName:  	tokenSymbol,
-				tokenPriceUSD:	tokenPriceUSD.toNumber(),
-				tokenPriceETH:	tokenPriceETH.toNumber(),
-				softCap:		config.softCap,
-				hardCap:  		config.hardCap,
-				tokensTotal:  	adjustedBalance,
-				ethTotal:   	0,
-				tokensSold:  	0,
-				dateStart:   	dateIcoStart.getTime(),
-				dateEnd:  		dateIcoEnd.getTime()
+				state:				stateIco,
+				wallet:				"",
+				tokenName:  		tokenSymbol,
+				tokenPriceUSD:		tokenPriceUSD.toNumber(),
+				tokenPriceETH:		tokenPriceETH.toNumber(),
+				softCap:			config.softCap,
+				hardCap:  			config.hardCap,
+				tokensTotal:  		adjustedBalance,
+				ethTotal:   		0,
+				tokensSold:  		0,
+				dateStart:   		dateIcoStart.getTime(),
+				dateEnd:  			dateIcoEnd.getTime(),
+				contractAddress:	""
 			}
 
 			sendParams("setParams", params, (err, responseTxt) => {
