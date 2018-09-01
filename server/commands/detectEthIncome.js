@@ -232,8 +232,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 if (id === null || id === -1)
                 {
                     id = 1027;
-                }
-                else {
                     logger.error("Can't get Ethereum Id from coinmarketcap, use 1027 by default");
                 }
         
@@ -277,6 +275,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         var paramsUpdated = {
                             state:          icoState,
                             ethReceived:    nbEth,
+                            tokensSend:     nbTokenToTransfert,
                             ethTotal:       ethereumReceived,
                             tokensSold:     nbTokenSold,
                             tokenPriceUSD:	tokenPriceUSD.toNumber(),
@@ -321,20 +320,19 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 mReferrer.find( { where: { WalletReferrer: instance[0].WalletReferrer}}, function(nbT, err, instance) {
                     if (err) {
                         logger.error("Error occurs when find all referrals in table(Referrer: " + instance[0].WalletReferrer + ") error: " + JSON.stringify(err));
+                        return;
                     }
-                    else {
-                        if (instance.length >= 10) {
-                            referrerPart = 10;
-                            logger.info("Incoming ethereum wallet: " + transaction.from + " have " + instance.length + " referrers, and received 10% of referrer transaction: ");
-                        }
-                        else {
-                            logger.info("Incoming ethereum wallet: " + transaction.from + " have " + instance.length + " referrers, and received 5% of referrer transaction: ");
-                        }
+
+                    if (instance.length >= 10) {
+                        referrerPart = 10;
                     }
+
                     var dateNow = new Date();
                     var dateReferrer = new Date(instance[0].StartDateReferrer);
                     if (dateNow.getTime() > dateReferrer.getTime()) {
                         var nbtokenToReferrer = nbT.dividedBy(referrerPart);
+
+                        logger.info("Incoming ethereum wallet: " + transaction.from + "is referral of " + instance[0].WelletReferrer + " have " + instance.length + " referrals, and received " + (100 / referrerPart) + "% of referrer transaction: " + nbtokenToReferrer.toNumber() + " tokens");
 
                         mTransaction.create({ EmiterWallet: instance[0].WalletReferrer, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferrer, DiscountFactor: 0, Referral: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenToReferrer));
                     }
