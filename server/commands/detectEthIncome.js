@@ -233,12 +233,19 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 {
                     id = 1027;
                 }
+                else {
+                    logger.error("Can't get Ethereum Id from coinmarketcap, use 1027 by default");
+                }
         
                 getCotation(id, (err, cotation) => {
                     if (cotation) {
                         ethereumPrice = web3.toBigNumber(cotation.data.quotes.USD.price);
                         tokenPriceEth = tokenPriceUSD.dividedBy(ethereumPrice);
                     }
+                    else {
+                        logger.error("Can't get ethereum price from coinmarketcap, use last knwo price of: " + ethereumPrice.toNumber());
+                    }
+
 
                     Async.forEach(notProcessedTrans, function(e) {
                         var nbEth = web3.fromWei(e.value, 'ether');
@@ -274,6 +281,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             tokensSold:     nbTokenSold,
                             tokenPriceUSD:	tokenPriceUSD.toNumber(),
                             tokenPriceETH:	tokenPriceEth.toNumber(),
+                            discount:       discountFactor
                         }
                         sendParams('setReceivedEth', paramsUpdated, (err, responseTxt) => {
                             if (err) return err;
@@ -309,6 +317,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             else if (instance.length > 0)
             {
                 var referrerPart = 20;
+                logger.info("We found a referrer for incoming ethereum to wallet: " + transaction.from);
                 mReferrer.find( { where: { WalletReferrer: instance[0].WalletReferrer}}, function(nbT, err, instance) {
                     if (err) {
                         logger.error("Error occurs when find all referrals in table(Referrer: " + instance[0].WalletReferrer + ") error: " + JSON.stringify(err));
@@ -316,6 +325,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     else {
                         if (instance.length >= 10) {
                             referrerPart = 10;
+                            logger.info("Incoming ethereum wallet: " + transaction.from + " have " + instance.length + " referrers, and received 10% of referrer transaction: ");
+                        }
+                        else {
+                            logger.info("Incoming ethereum wallet: " + transaction.from + " have " + instance.length + " referrers, and received 5% of referrer transaction: ");
                         }
                     }
                     var dateNow = new Date();
@@ -442,51 +455,81 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         /**
         * Récupère la cotation d'une crypto sur CoinMarketCap, en USD et en EUR
         */
-       
+        var lastDateGetCot = "";
+        var lastGetCot = "";
+
         function getCotation(cryptoId, cb) {
             var url = config.cmcURI + '/ticker/' + cryptoId + '/?convert=EUR';
-            request
-            .get(url)
-            .query({convert: 'EUR'})
-            .end((err, res) => {
-                if (err) return cb(err, null);
-                if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
-                    return cb(null, JSON.parse(res.text));
-                } else {
+            if (lastDateGetCot === "" || ((new Date().getTime() - lastDateGetCot.getTime()) > 10000)) {
+                lastDateGetCot = new Date();
+                request
+                .get(url)
+                .query({convert: 'EUR'})
+                .end((err, res) => {
+                    if (err) return cb(err, null);
+                    if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+                        lastGetCot = JSON.parse(res.text);
+                        return cb(null, lastGetCot);
+                    } else {
+                        return cb('request() error. url:' + url, null);
+                    }
+                });
+            }
+            else {
+                if (lastGetCot === "") {
                     return cb('request() error. url:' + url, null);
                 }
-            });
+                else {
+                    return cb(null, lastGetCot);
+                }
+            }
         }
 
         /**
         * Get crypto CoinMarketCap id
         */
-       function getCoinMarketCapId(cryptoName, cb) {
+        var lastDateGetId = "";
+        var lastIDGet = "";
+       
+        function getCoinMarketCapId(cryptoName, cb) {
             var url = config.cmcURI + '/listings/';
-            request
-            .get(url)
-            .end((err, res) => {
-                if (err) return cb(err, null);
-                if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
-                    var rep = JSON.parse(res.text);
-                    var id = -1;
-                    // rep.data.forEach(function(element) {
-                    //    if (element.name === cryptoName)
-                    //    {
-                    //        id = Number(element.id);
-                    //    }
-                    // });
-                    rep.data.some(function(element) {
-                        if (element.name === cryptoName) {
-                            id = Number(element.id);
-                            return true;
-                        }
-                    });
-                    return cb(null, id);
-                } else {
+            if (lastDateGetId === "" || ((new Date().getTime() - lastDateGetId.getTime()) > 10000)) {
+               lastDateGetId = new Date();
+                request
+                .get(url)
+                .end((err, res) => {
+                    if (err) return cb(err, null);
+                    if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
+                        var rep = JSON.parse(res.text);
+                        var id = -1;
+                        // rep.data.forEach(function(element) {
+                        //    if (element.name === cryptoName)
+                        //    {
+                        //        id = Number(element.id);
+                        //    }
+                        // });
+                        rep.data.some(function(element) {
+                            if (element.name === cryptoName) {
+                                id = Number(element.id);
+                                lastIDGet = id;
+                                return true;
+                            }
+                        });
+                        return cb(null, id);
+                    } else {
+                        return cb('request() error. url:' + url, null);
+                    }
+                });
+            }
+            else
+            {
+                if (lastIDGet === "") {
                     return cb('request() error. url:' + url, null);
                 }
-            });
+                else {
+                    return cb(null, lastIDGet);
+                }
+            }
         }
     
         /**
