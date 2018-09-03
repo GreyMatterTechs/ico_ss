@@ -84,9 +84,18 @@ async function WalletReceived(param, web3, cb) {
 	// we wait for contract be mined
 	if (secureswapContractInstance.address === undefined) {
 		var transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
-		while(transactionReceipt === null) {
+		var decimal = 0;
+		var balance = 0;
+		while(transactionReceipt === null || decimal === 0 || balance === 0) {
 			await sleep(5000);
 			transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
+			if (transactionReceipt !== null) {
+				if (transactionReceipt.contractAddress !== undefined) {
+					var tci = web3.eth.contract(secureswapContractInstance.abi).at(transactionReceipt.contractAddress);
+					decimal = tci.decimals();
+					balance = tci.balanceOf(tokenInitialOwnerAddress);
+				}
+			}
 		}
 		secureswapContractInstance.address = transactionReceipt.contractAddress;
 	}
@@ -99,8 +108,8 @@ async function WalletReceived(param, web3, cb) {
 	logger.info("Contract Mined !, contract transaction hash: " + secureswapContractInstance.transactionHash + " contract address: " + secureswapContractInstance.address);
 
 	var tokenContractInterface = web3.eth.contract(secureswapContractInstance.abi).at(secureswapContractInstance.address);
-	var decimal = tokenContractInterface.decimals();
-	var balance = tokenContractInterface.balanceOf(tokenInitialOwnerAddress);
+	decimal = tokenContractInterface.decimals();
+	balance = tokenContractInterface.balanceOf(tokenInitialOwnerAddress);
 	var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
