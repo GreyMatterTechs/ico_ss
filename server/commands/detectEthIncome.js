@@ -329,10 +329,12 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                     var dateNow = new Date().getTime();
                     var dateReferrer = instance[0].StartDateReferrer;
-                    var nbtokenToReferrer = nbT.dividedBy(referrerPart);
+                    var nbtokenUnitToReferrer = nbT.dividedBy(referrerPart);
                     if (dateNow > dateReferrer) {
-                        logger.info("Incoming ethereum wallet: " + transaction.from + " is referral of " + instance[0].WalletReferrer + " have " + instance.length + " referrals, and received " + (100 / referrerPart) + "% of referrer transaction: " + nbtokenToReferrer.dividedBy(Math.pow(10, decimal)).toNumber() + " tokens");
-                        mTransaction.create({ EmiterWallet: instance[0].WalletReferrer, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenToReferrer, DiscountFactor: 0, Referral: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenToReferrer));
+                        var nbTokenToReferrer = nbtokenUnitToReferrer.dividedBy(Math.pow(10, decimal)).toNumber()
+                        logger.info("Incoming ethereum wallet: " + transaction.from + " is referral of " + instance[0].WalletReferrer + " have " + instance.length + " referrals, and received " + (100 / referrerPart) + "% of referrer transaction: " + nbTokenToReferrer.toNumber() + " tokens");
+                        nbTokenSold += nbTokenToReferrer.toNumber();
+                        mTransaction.create({ EmiterWallet: instance[0].WalletReferrer, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: transaction.hash, NonceIn: transaction.nonce, NbEthereum: 0, NbToken: nbtokenUnitToReferrer, DiscountFactor: 0, Referral: instance[0].WalletInvestor }, transCreateCB.bind(null, nbtokenUnitToReferrer));
                     }
                     else {
                         logger.info("Referal refused for date, Incoming ethereum wallet: " + transaction.from + "is referral of " + instance[0].WalletReferrer + " have " + instance.length + " referrals, and received " + (100 / referrerPart) + "% of referrer transaction: " + nbtokenToReferrer.dividedBy(Math.pow(10, decimal)).toNumber() + " tokens");
