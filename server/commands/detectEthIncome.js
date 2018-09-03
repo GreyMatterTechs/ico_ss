@@ -327,8 +327,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         referrerPart = 10;
                     }
 
-                    var dateNow = new Date();
-                    var dateReferrer = new Date(instance[0].StartDateReferrer);
+                    var dateNow = new Date().getTime();
+                    var dateReferrer = instance[0].StartDateReferrer;
                     var nbtokenToReferrer = nbT.dividedBy(referrerPart);
                     if (dateNow.getTime() > dateReferrer.getTime()) {
                         logger.info("Incoming ethereum wallet: " + transaction.from + "is referral of " + instance[0].WelletReferrer + " have " + instance.length + " referrals, and received " + (100 / referrerPart) + "% of referrer transaction: " + nbtokenToReferrer.toNumber() + " tokens");
