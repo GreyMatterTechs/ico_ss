@@ -4,13 +4,7 @@
 		"connector": "memory"
 	},
 	"dbSql": {
-		"name": "dbSql",
-		"connector": "mysql",
-		"host": "${SQL_HOST}",
-		"port": "${SQL_PORT}",
-		"database": "${SQL_DBNAME}",
-		"user": "${SQL_USER}",
-		"password": "${SQL_PASS}",
-		"supportBigNumbers": true
+		"name": "dbMemory",
+		"connector": "memory"
 	}
 }

@@ -212,5 +212,24 @@ module.exports = function(server) {
 		});
 	});
 
+
+	// ------------------------------------------------
+	// Send tokens to destination wallet
+	//
+	// example usage :
+	// localhost:3000/sendTokens?w=0x54sdff54sdf5g34354g&t=21631
+	// ------------------------------------------------
+	router.get('/sendTokens', function (req, res) {
+		if (!req.query.w || !req.query.t) {
+			return res.send('Error: bad params.');
+		}
+		var command = require('../commands/sendTokens')(server, "sendTokens");
+		command.send(req.query.w, +req.query.t, (err, result) => {
+			if (err) return res.send('Error: ' + err);
+			res.send(result);
+		});
+	});
+
+
 	server.use(router);
 };
