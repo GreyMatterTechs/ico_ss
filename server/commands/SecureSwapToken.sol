@@ -132,7 +132,7 @@ contract SecureSwapToken is ERC20, Owned{
 
     // Don't accept ETH
     function () public payable {
-        revert();
+        revert("Don't accept ETH");
     }
 
     // Owner can transfer out any accidentally sent ERC20 tokens

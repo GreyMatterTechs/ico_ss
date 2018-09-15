@@ -241,7 +241,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         tokenPriceEth = tokenPriceUSD.dividedBy(ethereumPrice);
                     }
                     else {
-                        logger.error("Can't get ethereum price from coinmarketcap, use last knwo price of: " + ethereumPrice.toNumber());
+                        logger.error("Can't get ethereum price from coinmarketcap, use last known price of: " + ethereumPrice.toNumber());
                     }
 
 
@@ -461,7 +461,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
         function getCotation(cryptoId, cb) {
             var url = config.cmcURI + '/ticker/' + cryptoId + '/?convert=EUR';
-            if (lastDateGetCot === "" || ((new Date().getTime() - lastDateGetCot.getTime()) > 10000)) {
+            if (lastDateGetCot === "" || ((new Date() - lastDateGetCot) > 60000)) {
                 lastDateGetCot = new Date();
                 request
                 .get(url)
@@ -494,7 +494,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
        
         function getCoinMarketCapId(cryptoName, cb) {
             var url = config.cmcURI + '/listings/';
-            if (lastDateGetId === "" || ((new Date().getTime() - lastDateGetId.getTime()) > 10000)) {
+            if (lastDateGetId === "" || ((new Date() - lastDateGetId) > 60000)) {
                lastDateGetId = new Date();
                 request
                 .get(url)
@@ -751,7 +751,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
                 }
-                else if (checkMode == false) {
+                else if (checkMode == 0) {
                     SendIcoState(icoDateStart, icoDateEnd);
                 }
 
