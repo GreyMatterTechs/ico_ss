@@ -4,9 +4,7 @@
 		"connector": "memory"
 	},
 	"dbSql": {
-		"name": "dbSql",
-		"connector": "mysql",
-		"url": "${SQL_URL}",
-		"supportBigNumbers": true
+		"name": "dbMemory",
+		"connector": "memory"
 	}
 }

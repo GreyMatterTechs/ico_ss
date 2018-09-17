@@ -15,6 +15,7 @@ const sha3		= require('crypto-js/sha3');
 
 var appname;
 var mParam;
+var mTransaction;
 var sendTokensInstance = null;
 
 
@@ -183,10 +184,10 @@ sendTokens.prototype.send = function(w, t, cb) {
             logger.error("Erreur occurs when reading Param table, error: %o", JSON.stringify(err));
             return;
         }
-        ParamsReceived(params, cb, checkMode);
+        ParamsReceived(params);
     });
     
-    function ParamsReceived(params, cb, checkMode) {
+    function ParamsReceived(params) {
         if (params.length === 0)
         {
             logger.error("Wallet for initial token owner not defined !");
@@ -245,41 +246,41 @@ sendTokens.prototype.send = function(w, t, cb) {
 
 		// add transaction in table
 		mTransaction.create({ EmiterWallet: w, DateTimeIn: (new Date()).toUTCString(), InTransactionHash: "", NonceIn: 0, NbEthereum: 0, NbToken: nbTokenUnitToTransfert, DiscountFactor: 0 }, transCreateCB.bind(null, nbTokenUnitToTransfert));
-	}
 
-	function transCreateCB(nbToken, err, instance) {
-		if (err) {
-			logger.error("Error occurs when adding transaction in table, error: " + JSON.stringify(err));
-		}
-		else
-		{
-			sendToken(instance, nbToken);
-		}
-	}
-
-	function sendToken(instance, nbToken) {
-		tokenContractInstance.transfer(instance.EmiterWallet, nbToken, {gas: transactionGaz, gasPrice: gazPrice}, function(err, thash) {
-			if (!err) {
-				web3.eth.getTransaction(thash, function(err, trans){
-					if(err){
-						logger.error("Error: web3.eth.getTransaction() return an error after send/deploy transaction (transaction hash: " + thash + ") error: " + JSON.stringify(err));
-					}
-					else {
-						logger.info("Tokens sended to: " + trans.to + " transaction hash: " + trans.hash);
-
-						// update transaction table
-						instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": nbToken.dividedBy(Math.pow(10, decimal)).toNumber() }, function (err, instance) {
-							if (err) {
-								logger.error("Error: can't update transaction table after transaction hash: " + trans.hash + " is mined, error: " + JSON.stringify(err));
-							}
-						})
-					}
-				})
+		function transCreateCB(nbToken, err, instance) {
+			if (err) {
+				logger.error("Error occurs when adding transaction in table, error: " + JSON.stringify(err));
 			}
-			else {
-				logger.info("send token to wallet " + instance.EmiterWallet + " for " + nbToken.dividedBy(Math.pow(10, decimal)).toNumber() + " tokens from input transaction " + instance.InTransactionHash + " error: " + JSON.stringify(err));
+			else
+			{
+				sendToken(instance, nbToken);
 			}
-		})
+		}
+
+		function sendToken(instance, nbToken) {
+			tokenContractInstance.transfer(instance.EmiterWallet, nbToken, {gas: transactionGaz, gasPrice: gazPrice}, function(err, thash) {
+				if (!err) {
+					web3.eth.getTransaction(thash, function(err, trans){
+						if(err){
+							logger.error("Error: web3.eth.getTransaction() return an error after send/deploy transaction (transaction hash: " + thash + ") error: " + JSON.stringify(err));
+						}
+						else {
+							logger.info("Tokens sended to: " + trans.to + " transaction hash: " + trans.hash);
+
+							// update transaction table
+							instance.updateAttributes( { "OutTransactionHash": trans.hash, "NonceOut": trans.nonce, "DateTimeOut": (new Date()).toUTCString(), "NbToken": nbToken.dividedBy(Math.pow(10, decimal)).toNumber() }, function (err, instance) {
+								if (err) {
+									logger.error("Error: can't update transaction table after transaction hash: " + trans.hash + " is mined, error: " + JSON.stringify(err));
+								}
+							})
+						}
+					})
+				}
+				else {
+					logger.info("send token to wallet " + instance.EmiterWallet + " for " + nbToken.dividedBy(Math.pow(10, decimal)).toNumber() + " tokens from input transaction " + instance.InTransactionHash + " error: " + JSON.stringify(err));
+				}
+			})
+		}
 	}
 
 	return cb(null, "Done");
