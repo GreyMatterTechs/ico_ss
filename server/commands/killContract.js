@@ -100,7 +100,7 @@ KillContract.prototype.Init = function (cb) {
 module.exports = function (_server, _appname) {
     if (KillContractInstance === null)
     {
-        KillContractInstance = new KillContract(_server, _appname);
+       KillContractInstance = new KillContract(_server, _appname);
     }
     return KillContractInstance;
 }
