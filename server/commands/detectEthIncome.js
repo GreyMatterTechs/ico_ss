@@ -85,7 +85,6 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var icoDateStart = params[0].IcoDateStart;
         var icoDateEnd = params[0].IcoDateEnd;
         var icoState = 1;
-        var oldWebparams;
 
         logger.info("Inital token owner is: " + ICOWalletTokenAddress + " ethereum receiver: " + ICOWalletEthereumAddress + " ICOWalletDiscount1Address: " + ICOWalletDiscount1Address + " ICOWalletDiscount2Address: " + ICOWalletDiscount2Address + " Discount1Factor: " + Discount1Factor + " Discount2Factor: " + Discount2Factor, + " IcoDateStart:" + new Date(icoDateStart).toUTCString() + " IcoDateStop:" + new Date(icoDateEnd).toUTCString());
         
@@ -810,7 +809,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     logger.info("Check transaction process finished!")
                     balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
                     adjustedBalance = balance / Math.pow(10, decimal);
-                    logger.info("After correction: ICO Etherum received: %f, token left to sell: %f", ethereumReceived.toFixed(6), adjustedBalance - (totalToken - totalTokenToSend));
+                    logger.info("After correction: ICO Etherum received: " + ethereumReceived.toFixed(6) + ", token left to sell: " + (adjustedBalance - (totalToken - totalTokenToSend)));
                     cronStarted = false;
                     clearInterval(cron);
                     initCalled = false;

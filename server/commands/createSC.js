@@ -52,7 +52,7 @@ function sleep (ms) {
  * @class SmartContract
  * @private
  */
-async function WalletReceived(param, web3, cb) {
+async function WalletReceived(param, contractCreactionBlock, web3, cb) {
 	var tokenInitialOwnerAddress = param.ICOWalletTokenAddress;
 	logger.info("Inital token owner is: " + tokenInitialOwnerAddress);
 
@@ -65,7 +65,7 @@ async function WalletReceived(param, web3, cb) {
 
 	let abi = compiledContract.contracts[':SecureSwapToken'].interface;
 	let bytecode = "0x" + compiledContract.contracts[':SecureSwapToken'].bytecode;
-	let gasEstimate = web3.eth.estimateGas({ data: bytecode });
+	let gasEstimate = "0x" + web3.eth.estimateGas({ data: bytecode });
 
 	let formatedAbi = JSON.parse(abi);
 	logger.info("contract compiled, abi: " + JSON.stringify(formatedAbi) + " gasEstimated: " + gasEstimate + "\n");
@@ -84,16 +84,16 @@ async function WalletReceived(param, web3, cb) {
 	// we wait for contract be mined
 	if (secureswapContractInstance.address === undefined) {
 		var transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
-		var decimal = 0;
-		var balance = 0;
-		while(transactionReceipt === null || decimal === 0 || balance === 0) {
-			await sleep(5000);
+		var dec = web3.toBigNumber(0);
+		var bal = web3.toBigNumber(0);
+		while(transactionReceipt === null /*|| dec.toNumber() === 0 || bal.toNumber() === 0*/) {
+			await sleep(1000);
 			transactionReceipt = web3.eth.getTransactionReceipt(secureswapContractInstance.transactionHash);
 			if (transactionReceipt !== null) {
 				if (transactionReceipt.contractAddress !== undefined) {
 					var tci = web3.eth.contract(secureswapContractInstance.abi).at(transactionReceipt.contractAddress);
-					decimal = tci.decimals();
-					balance = tci.balanceOf(tokenInitialOwnerAddress);
+					dec = tci.decimals();
+					bal = tci.balanceOf(tokenInitialOwnerAddress);
 				}
 			}
 		}
@@ -108,8 +108,9 @@ async function WalletReceived(param, web3, cb) {
 	logger.info("Contract Mined !, contract transaction hash: " + secureswapContractInstance.transactionHash + " contract address: " + secureswapContractInstance.address);
 
 	var tokenContractInterface = web3.eth.contract(secureswapContractInstance.abi).at(secureswapContractInstance.address);
-	decimal = tokenContractInterface.decimals();
-	balance = tokenContractInterface.balanceOf(tokenInitialOwnerAddress);
+
+	var decimal = tokenContractInterface.decimals();
+	var balance = tokenContractInterface.balanceOf(tokenInitialOwnerAddress);
 	var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
@@ -134,8 +135,12 @@ async function WalletReceived(param, web3, cb) {
 				logger.error("Can't read Ethereum cotation on CoinMarketCap, use old value: " + ethereumPrice);
 			}
 
+			if (contractCreactionBlock === 0) {
+				contractCreactionBlock = transactionReceipt.blockNumber;
+			}
+
 			param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "TokenContractAddress" : secureswapContractInstance.address, "NbTotalToken": adjustedBalance, "NbTokenToSell": 80000000, 
-									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": transactionReceipt.blockNumber, 
+									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": contractCreactionBlock, 
 									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dateIcoStart.getTime(), "IcoDateEnd": dateIcoEnd.getTime() }, function (err, instance) {
 				if (err) {
 					logger.error("Can't update param.attributes for param.id: " + param.id + " err:" + err);
@@ -286,41 +291,46 @@ SmartContract.prototype.create = function (cb) {
 	logger.info(config.appName + ': Creating...');
     
   	var web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));  
-  
-	// get parameters from table Param
-	mParam.destroyAll(function(err, param) {
-		if (err){
-			logger.error("Error occurs when cleaning Param table. error: " + JSON.stringify(err));
-			return cb("Error occurs when cleaning param table. error: " + JSON.stringify(err), null);
+	var contractCreactionBlock = 0;
+
+	mParam.find(function(err, params) {
+        if (err){
+            logger.error("Erreur occurs when reading Param table, error: %o", JSON.stringify(err));
+            return;
+        }
+		
+		if (params.length != 0)
+		{
+			contractCreactionBlock = params[0].BlockTokenStart;
 		}
-		logger.info("Table Param empty, create default params");
-		mParam.create({ ICOWalletTokenAddress: config.walletTokenAddress, ICOWalletEthereumAddress: config.walletEthereumAddress, ICOWalletDiscount1Address: config.walletDiscount1Address, 
-			ICOWalletDiscount2Address: config.walletDiscount2Address, USDEthereumPrice: config.usdEthereumPrice, USDTokenPrice: config.usdTokenPrice, Discount1Factor: config.discount1Factor, Discount2Factor: config.discount2Factor, TransactionGaz: config.transactionGaz, GazPice: config.gazPrice}, (err, instance) => {
-			if (err) {
-				logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
-				return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
+
+		// get parameters from table Param
+		mParam.destroyAll(function(err, param) {
+			if (err){
+				logger.error("Error occurs when cleaning Param table. error: " + JSON.stringify(err));
+				return cb("Error occurs when cleaning param table. error: " + JSON.stringify(err), null);
 			}
-			WalletReceived(instance, web3, cb);
+			logger.info("Table Param empty, create default params");
+			mParam.create({ ICOWalletTokenAddress: config.walletTokenAddress, ICOWalletEthereumAddress: config.walletEthereumAddress, ICOWalletDiscount1Address: config.walletDiscount1Address, 
+				ICOWalletDiscount2Address: config.walletDiscount2Address, USDEthereumPrice: config.usdEthereumPrice, USDTokenPrice: config.usdTokenPrice, Discount1Factor: config.discount1Factor, Discount2Factor: config.discount2Factor, TransactionGaz: config.transactionGaz, GazPice: config.gazPrice}, (err, instance) => {
+				if (err) {
+					logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
+					return cb("Error occurs when adding default param in table Param error: " + JSON.stringify(err), null);
+				}
+				WalletReceived(instance, contractCreactionBlock, web3, cb);
+			});
 		});
 	});
 }
 
 /**
- * Connect to local node,
  * Cleanup transactions
  * 
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
- * @param {Error} err Error information
- * @param {string} tokenInfos Transaction table clean info
- * 
- * @class SmartContract
- * @public
  */
 SmartContract.prototype.cleanTransaction = function (cb) {
 	logger.info(config.appName + ': Clean Transaction...');
     
-  	var web3 = new Web3(new Web3.providers.HttpProvider(config.web3Provider));  
-  
 	// delete all transactions in transaction table
 	mTransaction.destroyAll(function(err, info) {
 		if (err) {
@@ -332,6 +342,24 @@ SmartContract.prototype.cleanTransaction = function (cb) {
 	});
 }
 
+/**
+ * Cleanup parameters
+ * 
+ * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
+ */
+SmartContract.prototype.cleanParam = function (cb) {
+	logger.info(config.appName + ': Clean Params...');
+    
+	// delete all params in transaction table
+	mParam.destroyAll(function(err, info) {
+		if (err) {
+			logger.error("Error occurs when cleaning Param table. error: " + JSON.stringify(err));
+			return cb("Error occurs when cleaning Param table. error: " + JSON.stringify(err), null);
+		}
+		logger.info(info.count + " were destroyed from Param table");	
+		return cb(null, info.count + " were destroyed from Param table");
+	});
+}
 
 //---------------------------------------------------------------------------
 // Module export

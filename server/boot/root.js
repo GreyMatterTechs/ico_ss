@@ -125,6 +125,17 @@ module.exports = function(server) {
 	});
 
 	// ------------------------------------------------
+	// Clean param table
+	// ------------------------------------------------
+	router.get('/cleanParam', function(req, res) {
+		var sc = require('../commands/createSC')(server, "cleanParam");
+		sc.cleanParam((err, tokenInfos) => {
+			if (err) return res.send('Error: '+err);
+			res.send(tokenInfos);
+		});
+	});
+
+	// ------------------------------------------------
 	// Resent emited token
 	// ------------------------------------------------
 	router.get('/ResendEmitedToken', function(req, res) {

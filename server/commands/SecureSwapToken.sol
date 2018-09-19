@@ -20,6 +20,10 @@ interface ERC20 {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     // Triggered whenever approve(address _spender, uint256 _value) is called.
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+    // optionals functions
+    function name() external view returns(string ne);
+    function symbol() external view returns(string sl);
+    function decimals() external view returns(uint8 dl);
 }
 
 // Owned contract
@@ -60,10 +64,11 @@ contract Owned {
 
 // ERC20 Token Smart contract
 contract SecureSwapToken is ERC20, Owned{
-    string public name = "SecureSwap";
-    string public symbol = "SSW";
-    uint8 public decimals = 18;
-    uint256 private _totalSupply = 100000000000000000000000000; // 100 000 000 . 000 000 ...
+
+    string private constant _name = "SecureSwap";
+    string private constant _symbol = "SSW";
+    uint8 private constant _decimals = 18;
+    uint256 private constant  _totalSupply = 100000000000000000000000000; // 100 000 000 . 000 000 ...
 
     // Balances for each account
     mapping(address => uint256) balances;
@@ -71,11 +76,23 @@ contract SecureSwapToken is ERC20, Owned{
     mapping(address => mapping(address=>uint256)) allowed;
 
     // Constructor
-    constructor() public{
+    constructor() public {
         balances[msg.sender] = _totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
     }
 
+    function name() public view returns(string){
+        return _name;
+    }
+
+    function symbol() public view returns(string){
+        return _symbol;
+    }
+ 
+    function decimals() public view returns(uint8){
+        return _decimals;
+    }
+ 
     function totalSupply() public view returns(uint256){
         return _totalSupply;
     }
