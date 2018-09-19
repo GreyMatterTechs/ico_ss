@@ -361,6 +361,39 @@ SmartContract.prototype.cleanParam = function (cb) {
 	});
 }
 
+/**
+ * fic parameters
+ * 
+ * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
+ */
+SmartContract.prototype.fixParam = function (cb) {
+	logger.info(config.appName + ': fix Params...');
+    
+	var dtIcoStart = new Date(config.dateIcoStart);
+	var dtIcoEnd = new Date(config.dateIcoEnd);
+
+	mParam.find(function(err, params) {
+        if (err){
+            logger.error("Erreur occurs when reading Param table, error: %o", JSON.stringify(err));
+            return;
+		}
+		if (params.length != 0)
+		{
+			params[0].updateAttributes( { "TokenContractTransactionHash" : "0x6a8d436109e99c29d4f5234e13413203e72181d2a3e5f28b3f6732a42c540fdb", "TokenContractAddress" : "0x1595f85e801257aaaf5eedcc1fc95e03ea9d90fd", "NbTotalToken": 100000000, "NbTokenToSell": 80000000, 
+									"USDTokenPrice": 0.45, "USDEthereumPrice": 205.2, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": 6362564, "BlockTokenStart": 6362564, 
+									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dtIcoStart.getTime(), "IcoDateEnd": dtIcoEnd.getTime() }, function (err, instance) {
+				if (err) {
+					logger.error("Can't update param.attributes for param.id: " + instance.id + " err:" + err);
+					return cb(err, null);
+				}
+				logger.info("Param table fixed: TokenContractTransactionHash:" + instance.TokenContractTransactionHash + " TokenContractAddress: " + instance.TokenContractAddress);
+			});
+		}
+	});
+	return cb(null, "fix prams launched");
+}
+
+
 //---------------------------------------------------------------------------
 // Module export
 //---------------------------------------------------------------------------
