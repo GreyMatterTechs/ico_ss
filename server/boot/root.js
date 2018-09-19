@@ -216,7 +216,7 @@ module.exports = function(server) {
 	// kill smart contract
 	// ------------------------------------------------
 	router.get('/killSC', function (req, res) {
-		var sc = require('../commands/KillContract')(server, "KillContract");
+		var sc = require('../commands/killContract')(server, "killContract");
 		sc.kill( (err, result) => {
 			if (err) return res.send('Error: '+err);
 			res.send(result);
