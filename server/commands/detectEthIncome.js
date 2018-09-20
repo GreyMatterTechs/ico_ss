@@ -71,7 +71,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
     function ParamsReceived(params, cb, checkMode) {
         if (params.length === 0)
         {
-            logger.error("Wallet for initial token owner not defined !");
+            logger.error( new Date().toString() + ": param.length = 0, no record on the table Param !");
             return;
         }
         // wallet adresse & private key and contract transaction hash used for create the token

@@ -362,7 +362,7 @@ SmartContract.prototype.cleanParam = function (cb) {
 }
 
 /**
- * fic parameters
+ * fix parameters
  * 
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
  */
@@ -374,32 +374,81 @@ SmartContract.prototype.fixParam = function (cb) {
 
 	mParam.find(function(err, params) {
         if (err){
-            logger.error("Erreur occurs when reading Param table, error: %o", JSON.stringify(err));
-            return;
+			logger.error("Erreur occurs when reading Param table, error: %o", JSON.stringify(err));
+			return cb("Erreur occurs when reading Param table, error: " +  JSON.stringify(err), null);
 		}
 		if (params.length != 0)
 		{
+			logger.info("Param table contains: " + params.length + " entry, update entries...");
+
 			params[0].updateAttributes( { "TokenContractTransactionHash" : "0x6a8d436109e99c29d4f5234e13413203e72181d2a3e5f28b3f6732a42c540fdb", "TokenContractAddress" : "0x1595f85e801257aaaf5eedcc1fc95e03ea9d90fd", "NbTotalToken": 80000000, "NbTokenToSell": 80000000, 
 									"USDTokenPrice": 0.45, "USDEthereumPrice": 205, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": 6367070, "BlockTokenStart": 6362564, 
 									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dtIcoStart.getTime(), "IcoDateEnd": dtIcoEnd.getTime(), "TransactionGaz": 94000, "GazPice": 24 }, function (err, instance) {
 				if (err) {
 					logger.error("Can't update param.attributes for param.id: " + instance.id + " err:" + err);
-					return cb(err, null);
+					return cb("Can't update param.attributes err:" + JSON.stringify(err), null);
 				}
 				logger.info("Param table fixed: " + instance.TokenContractTransactionHash + " " + instance.TokenContractAddress + " " + instance.NbTotalToken + " " + instance.NbTokenToSell + " " + instance.USDTokenPrice + " " + instance.USDEthereumPrice + " " +
 			                  instance.NbTokenSold + " " + instance.NbEthereum);
 			});
 
-			logger.info("---------------------------Table param content");
+			logger.info("Table param content---------------------------");
 			params.forEach(element => {
-				logger.info(JSON.stringify(element));
+				logger.info(element);
+			});
+			logger.info("----------------------------------------------");
+			return cb(null, "Table Param updated");
+		}
+		else {
+			logger.info("Param table is empty! create new record...");
+
+			mParam.create({ ICOWalletTokenAddress: config.walletTokenAddress, ICOWalletEthereumAddress: config.walletEthereumAddress, ICOWalletDiscount1Address: config.walletDiscount1Address, ICOWalletDiscount2Address: config.walletDiscount2Address, 
+				USDEthereumPrice: config.usdEthereumPrice, USDTokenPrice: config.usdTokenPrice, Discount1Factor: config.discount1Factor, Discount2Factor: config.discount2Factor, TransactionGaz: config.transactionGaz, GazPice: config.gazPrice,
+				TokenContractTransactionHash: "0x6a8d436109e99c29d4f5234e13413203e72181d2a3e5f28b3f6732a42c540fdb", TokenContractAddress : "0x1595f85e801257aaaf5eedcc1fc95e03ea9d90fd", NbTotalToken: 80000000, NbTokenToSell: 80000000, NbTokenSold: 0.0, NbEthereum: 0.0, 
+				LastProcessedBlock: 6368800, BlockTokenStart: 6362564, NbBlockTransactionConfirmation: 6, IcoDateStart: dtIcoStart.getTime(), IcoDateEnd: dtIcoEnd.getTime() }, (err, instance) => {
+				if (err) {
+					logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
+					return cb("Can't update param.attributes err:" + JSON.stringify(err), null);
+				}
+				logger.info("Param table record created!");
+				logger.info("Table param content---------------------------");
+				logger.info(instance);
+				logger.info("----------------------------------------------");
+				return cb(null, "Table Param record created");
+			});
+		}
+	});
+}
+
+/**
+ * fix parameters
+ * 
+ * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
+ */
+SmartContract.prototype.displayParam = function (cb) {
+	logger.info(config.appName + ': display Params...');
+    
+	mParam.find(function(err, params) {
+        if (err){
+			logger.error("Erreur occurs when reading Param table, error: %o", JSON.stringify(err));
+			return cb("Erreur occurs when reading Param table, error: " + JSON.stringify(err), null);
+		}
+		if (params.length != 0)
+		{
+			logger.info("Param table contains: " + params.length + " entry, update entries...");
+
+			logger.info("Table param content---------------------------");
+			params.forEach(element => {
+				logger.info(element);
 			});
 			logger.info("----------------------------------------------");
 		}
+		else{
+			logger.info("Param table is empty!");
+		}
 	});
-	return cb(null, "fix prams launched");
+	return cb(null, "table param displayed");
 }
-
 
 //---------------------------------------------------------------------------
 // Module export
