@@ -389,6 +389,12 @@ SmartContract.prototype.fixParam = function (cb) {
 				logger.info("Param table fixed: " + instance.TokenContractTransactionHash + " " + instance.TokenContractAddress + " " + instance.NbTotalToken + " " + instance.NbTokenToSell + " " + instance.USDTokenPrice + " " + instance.USDEthereumPrice + " " +
 			                  instance.NbTokenSold + " " + instance.NbEthereum);
 			});
+
+			logger.info("---------------------------Table param content");
+			params.forEach(element => {
+				logger.info(JSON.stringify(element));
+			});
+			logger.info("----------------------------------------------");
 		}
 	});
 	return cb(null, "fix prams launched");
