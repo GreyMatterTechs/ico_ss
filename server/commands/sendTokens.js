@@ -236,7 +236,12 @@ sendTokens.prototype.send = function(w, t, cb) {
 
 		var decimal = tokenContractInstance.decimals();
 		var nbTokenUnitToTransfert = web3.toBigNumber(t).times(Math.pow(10, decimal));
-		var nbTokenSold = params[0].tokenSold + t;
+		var nbTokenSold = params[0].NbTokenSold + t;
+
+		logger.info("Decimal: " + decimal);
+		logger.info("nbTokenToTransfert: " + t);
+		logger.info("nbTokenUnitToTransfert: " + nbTokenUnitToTransfert.toNumber());
+		logger.info("nbTokenSold: " + nbTokenSold);
 
 		params[0].updateAttributes( { "NbTokenSold": nbTokenSold }, function (err, instance) {
 			if (err) {
