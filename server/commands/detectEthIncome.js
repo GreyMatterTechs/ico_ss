@@ -368,7 +368,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
 
         function sendToken(instance, nbToken) {
-            tokenContractInstance.transfer(instance.EmiterWallet, nbToken, {gas: transactionGaz, gasPrice: gazPrice}, function(err, thash) {
+//            tokenContractInstance.transfer(instance.EmiterWallet, nbToken, {gas: transactionGaz, gasPrice: gazPrice}, function(err, thash) {
+            tokenContractInstance.transfer(instance.EmiterWallet, nbToken, function(err, thash) {
                 if (!err) {
                     web3.eth.getTransaction(thash, function(err, trans){
                         if(err){
