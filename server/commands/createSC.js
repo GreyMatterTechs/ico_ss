@@ -381,7 +381,7 @@ SmartContract.prototype.fixParam = function (cb) {
 		{
 			params[0].updateAttributes( { "TokenContractTransactionHash" : "0x6a8d436109e99c29d4f5234e13413203e72181d2a3e5f28b3f6732a42c540fdb", "TokenContractAddress" : "0x1595f85e801257aaaf5eedcc1fc95e03ea9d90fd", "NbTotalToken": 100000000, "NbTokenToSell": 80000000, 
 									"USDTokenPrice": 0.45, "USDEthereumPrice": 205, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": 6362564, "BlockTokenStart": 6362564, 
-									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dtIcoStart.getTime(), "IcoDateEnd": dtIcoEnd.getTime(), "TransactionGaz": 94000, "GazPice": 16 }, function (err, instance) {
+									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dtIcoStart.getTime(), "IcoDateEnd": dtIcoEnd.getTime(), "TransactionGaz": 94000, "GazPice": 24 }, function (err, instance) {
 				if (err) {
 					logger.error("Can't update param.attributes for param.id: " + instance.id + " err:" + err);
 					return cb(err, null);
