@@ -405,7 +405,7 @@ SmartContract.prototype.fixParam = function (cb) {
 			mParam.create({ ICOWalletTokenAddress: config.walletTokenAddress, ICOWalletEthereumAddress: config.walletEthereumAddress, ICOWalletDiscount1Address: config.walletDiscount1Address, ICOWalletDiscount2Address: config.walletDiscount2Address, 
 				USDEthereumPrice: config.usdEthereumPrice, USDTokenPrice: config.usdTokenPrice, Discount1Factor: config.discount1Factor, Discount2Factor: config.discount2Factor, TransactionGaz: config.transactionGaz, GazPice: config.gazPrice,
 				TokenContractTransactionHash: "0x6a8d436109e99c29d4f5234e13413203e72181d2a3e5f28b3f6732a42c540fdb", TokenContractAddress : "0x1595f85e801257aaaf5eedcc1fc95e03ea9d90fd", NbTotalToken: 80000000, NbTokenToSell: 80000000, NbTokenSold: 0.0, NbEthereum: 0.0, 
-				LastProcessedBlock: 6368800, BlockTokenStart: 6362564, NbBlockTransactionConfirmation: 6, IcoDateStart: dtIcoStart.getTime(), IcoDateEnd: dtIcoEnd.getTime() }, (err, instance) => {
+				LastProcessedBlock: 6375842, BlockTokenStart: 6375842, NbBlockTransactionConfirmation: 6, IcoDateStart: dtIcoStart.getTime(), IcoDateEnd: dtIcoEnd.getTime() }, (err, instance) => {
 				if (err) {
 					logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
 					return cb("Can't update param.attributes err:" + JSON.stringify(err), null);
