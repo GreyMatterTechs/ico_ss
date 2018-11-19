@@ -258,11 +258,24 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         var ajustedTokenPrice = web3.toBigNumber(tokenPriceEth * discountFactor);
                         var nbTokenToTransfert = nbEth.dividedBy(ajustedTokenPrice);
                         var nbTokenUnitToTransfert = nbTokenToTransfert.times(Math.pow(10, decimal));
+
+                        if (nbEth < 0.1 || icoState === 3) {
+                            nbTokenToTransfert = web3.toBigNumber(0);
+                            nbTokenUnitToTransfert = web3.toBigNumber(0);
+                        }
+
                         logger.info(" -> Send: " + nbTokenToTransfert.toNumber().toFixed(8) + " SSW to " + e.from + " with discount factor: " + discountFactor);
 
                         if (!missingToken) {
-                            ethereumReceived += nbEth.toNumber();
-                            nbTokenSold += nbTokenToTransfert.toNumber();
+                            if (nbEth > 0.1 && icoState !== 3) {
+                                ethereumReceived += nbEth.toNumber();
+                                nbTokenSold += nbTokenToTransfert.toNumber();
+                            }
+                            else {
+                                var retEth = nbEth - web3.fromWei(transactionGaz * gazPrice, 'ether');
+                                var retWei = web3.toWei(retEth, 'ether');
+                                returnEthereum(e.to, e.from, retWei);
+                            }
                         }
 
                         params[0].updateAttributes( { "NbEthereum" : ethereumReceived, "NbTokenSold": nbTokenSold, "USDEthereumPrice": ethereumPrice.toNumber()}, function (err, instance) {
@@ -271,19 +284,21 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             }
                         });        
 
-                        var paramsUpdated = {
-                            state:          icoState,
-                            ethReceived:    nbEth,
-                            tokensSend:     nbTokenToTransfert,
-                            ethTotal:       ethereumReceived,
-                            tokensSold:     nbTokenSold,
-                            tokenPriceUSD:	tokenPriceUSD.toNumber(),
-                            tokenPriceETH:	tokenPriceEth.toNumber(),
-                            discount:       discountFactor
+                        if (nbTokenUnitToTransfert > 0) {
+                            var paramsUpdated = {
+                                state:          icoState,
+                                ethReceived:    nbEth,
+                                tokensSend:     nbTokenToTransfert,
+                                ethTotal:       ethereumReceived,
+                                tokensSold:     nbTokenSold,
+                                tokenPriceUSD:	tokenPriceUSD.toNumber(),
+                                tokenPriceETH:	tokenPriceEth.toNumber(),
+                                discount:       discountFactor
+                            }
+                            sendParams('setReceivedEth', paramsUpdated, (err, responseTxt) => {
+                                if (err) return err;
+                            });
                         }
-                        sendParams('setReceivedEth', paramsUpdated, (err, responseTxt) => {
-                            if (err) return err;
-                        });
 
                         if(!missingToken){
                             // add transaction in table
@@ -293,7 +308,9 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             mTransaction.find({ where: { EmiterWallet: e.from, InTransactionHash: e.hash }}, transUpdateCB.bind(null, nbTokenUnitToTransfert));
                         }
 
-                        checkReferrer(e, nbTokenUnitToTransfert);
+                        if (nbTokenUnitToTransfert > 0) {
+                            checkReferrer(e, nbTokenUnitToTransfert);
+                        }
                     }, function(err) {
                         if(err)
                         {
@@ -348,7 +365,9 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }
             else
             {
-                sendToken(instance, nbToken);
+                if (nbToken > 0) {
+                    sendToken(instance, nbToken);
+                }
             }
         }
 
@@ -362,7 +381,9 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     logger.error("Many instance found (" + instances.length + ") when find transaction in table(for input transaction hash: " + instance.InTransactionHash + ") for mising token send");
                 }
                 else {
-                    sendToken(instances[0], nbToken);
+                    if (nbToken > 0) {
+                        sendToken(instances[0], nbToken);
+                    }
                 }
             }
         }
@@ -404,7 +425,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 return procTrans.every(pT => !(pT.EmiterWallet === decodedData.params[0].value && pT.OutTransactionHash == value.hash));
             });
 
-            // on check les transaction receipt de chaqu etransaction d'envois de token
+            // on check les transaction receipt de chaque transaction d'envois de token
             bcTransOut.forEach(function(t){
                 const decodedData = abiDecoder.decodeMethod(t.input);
                 var transactionReceipt = web3.eth.getTransactionReceipt(t.hash);
@@ -672,6 +693,40 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }
         }
 
+        function returnEthereum(ethOwner, ethDestinataire, eth){
+            try { // transfer ethereum
+                var tx = {
+                    gas: transactionGaz,
+                    gasPrice: gazPrice,
+                    from: ethOwner,
+                    to: ethDestinataire, 
+                    value: eth
+                }
+        
+                web3.eth.sendTransaction(tx, function(err, transactionHash){
+                    if (!err){
+                        logger.info("--- return ethereum transaction " + transactionHash + " submited!");
+                    }
+                    else{
+                        logger.error("*** return ethereum erreur " + JSON.stringify(err));
+                    return;
+                    }
+                });
+                if (typeof eth === "string") {
+                    logger.info("Return ethereum by sending transaction from " + ethOwner + " to " + ethDestinataire + " for " + eth + " ether");
+                }
+                else {
+                    logger.info("Return ethereum by sending transaction from " + ethOwner + " to " + ethDestinataire + " for " + web3.fromWei(eth, "ether").toNumber() + " ether");
+                }
+            }
+            catch(err){
+              logger.error("Exception during function returnEthereum: " + JSON.stringify(err));
+            }
+            finally{
+              logger.info('-----------------------------------------------------------------------------------');
+            }
+        }
+
        function transfertEthereum(ethOwner, ethDestinataire, eth){
             try { // transfer ethereum
                 var tx = {
@@ -742,7 +797,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     logger.info("ICO Etherum received: " + ethereumReceived.toFixed(6) + ", token left to sell: " + (adjustedBalance - (totalToken - totalTokenToSend)));
                 }
 
-                if (adjustedBalance <= (totalToken - totalTokenToSend) && checkMode == false) {
+                if (adjustedBalance <= (totalToken - totalTokenToSend)) {
                     if (icoState !== 3)
                     {
                         icoState = 3;
@@ -751,7 +806,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
                 }
-                else if (checkMode == 0) {
+                if (checkMode == 0 && icoState !== 3) {
                     SendIcoState(icoDateStart, icoDateEnd);
                 }
 
@@ -788,11 +843,13 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         });        
 
                         // Secure eth to locked wallet
-                        if (ICOWalletTokenAddress !== ICOWalletEthereumAddress) {
-                            checkNeedTransfertEthereum(ICOWalletTokenAddress, ICOWalletEthereumAddress);
+                        if (icoState !== 3) {
+                            if (ICOWalletTokenAddress !== ICOWalletEthereumAddress) {
+                                checkNeedTransfertEthereum(ICOWalletTokenAddress, ICOWalletEthereumAddress);
+                            }
+                            checkNeedTransfertEthereum(ICOWalletDiscount1Address, ICOWalletEthereumAddress);
+                            checkNeedTransfertEthereum(ICOWalletDiscount2Address, ICOWalletEthereumAddress);
                         }
-                        checkNeedTransfertEthereum(ICOWalletDiscount1Address, ICOWalletEthereumAddress);
-                        checkNeedTransfertEthereum(ICOWalletDiscount2Address, ICOWalletEthereumAddress);
                     }
                 }
                 // Check all BlockChaine blocks vs transaction table for found missing or interrupted transactions
