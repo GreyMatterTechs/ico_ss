@@ -9,6 +9,7 @@ const Async		= require("async");
 const request   = require('superagent');
 const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
+const moment    = require('moment');
 
 var mParam;
 var mTransaction;
@@ -115,8 +116,8 @@ async function WalletReceived(param, contractCreactionBlock, web3, cb) {
 	var tokenName = tokenContractInterface.name();
 	var tokenSymbol = tokenContractInterface.symbol();
 	var ethereumPrice = config.usdEthereumPrice;
-	var dateIcoStart = new Date(config.dateIcoStart);
-	var dateIcoEnd = new Date(config.dateIcoEnd);
+	var dateIcoStart = moment.utc(config.dateIcoStart);
+	var dateIcoEnd = moment.utc(config.dateIcoEnd);
 
 	getCoinMarketCapId("Ethereum", (err, id) => {
 		if (id === null || id === -1)
@@ -141,7 +142,7 @@ async function WalletReceived(param, contractCreactionBlock, web3, cb) {
 
 			param.updateAttributes( { "TokenContractTransactionHash" : secureswapContractInstance.transactionHash, "TokenContractAddress" : secureswapContractInstance.address, "NbTotalToken": adjustedBalance, "NbTokenToSell": 80000000, 
 									"USDTokenPrice": 0.45, "USDEthereumPrice": ethereumPrice, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": transactionReceipt.blockNumber, "BlockTokenStart": contractCreactionBlock, 
-									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dateIcoStart.getTime(), "IcoDateEnd": dateIcoEnd.getTime() }, function (err, instance) {
+									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dateIcoStart.toDate().getTime(), "IcoDateEnd": dateIcoEnd.toDate().getTime() }, function (err, instance) {
 				if (err) {
 					logger.error("Can't update param.attributes for param.id: " + param.id + " err:" + err);
 					return cb(err, null);
@@ -154,9 +155,10 @@ async function WalletReceived(param, contractCreactionBlock, web3, cb) {
 			var tokenPriceETH = tokenPriceUSD.dividedBy(ethereumPrice);
 
 			var stateIco = 1;
-			if (new Date(dateIcoStart).getTime() < new Date().getTime()) {
+            var dateActual = moment();
+            if (dateActual.isAfter(dateIcoStart)) {
 				stateIco = 2;
-				if (new Date(dateIcoEnd).getTime() < new Date().getTime()) {
+				if (dateActual.isAfter(dateIcoEnd)) {
 					stateIco = 3;
 				}
 			}
@@ -175,8 +177,9 @@ async function WalletReceived(param, contractCreactionBlock, web3, cb) {
 				tokensTotal:  		adjustedBalance,
 				ethTotal:   		0,
 				tokensSold:  		0,
-				dateStart:   		dateIcoStart.getTime(),
-				dateEnd:  			dateIcoEnd.getTime(),
+				dateStart:   		dateIcoStart.toISOString(),
+				dateEnd:  			dateIcoEnd.toISOString(),
+	
 				contractAddress:	""
 			}
 
@@ -368,9 +371,9 @@ SmartContract.prototype.cleanParam = function (cb) {
  */
 SmartContract.prototype.fixParam = function (cb) {
 	logger.info(config.appName + ': fix Params...');
-    
-	var dtIcoStart = new Date(config.dateIcoStart);
-	var dtIcoEnd = new Date(config.dateIcoEnd);
+	
+	var dtIcoStart = moment.utc(config.dateIcoStart);
+	var dtIcoEnd = moment.utc(config.dateIcoEnd);
 
 	mParam.find(function(err, params) {
         if (err){
@@ -383,7 +386,7 @@ SmartContract.prototype.fixParam = function (cb) {
 
 			params[0].updateAttributes( { "TokenContractTransactionHash" : "0x6a8d436109e99c29d4f5234e13413203e72181d2a3e5f28b3f6732a42c540fdb", "TokenContractAddress" : "0x1595f85e801257aaaf5eedcc1fc95e03ea9d90fd", "NbTotalToken": 80000000, "NbTokenToSell": 80000000, 
 									"USDTokenPrice": 0.45, "USDEthereumPrice": 205, "NbTokenSold": 0.0, "NbEthereum": 0.0, "LastProcessedBlock": 6367070, "BlockTokenStart": 6362564, 
-									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dtIcoStart.getTime(), "IcoDateEnd": dtIcoEnd.getTime(), "TransactionGaz": 94000, "GazPice": 24 }, function (err, instance) {
+									"NbBlockTransactionConfirmation": 6, "IcoDateStart": dtIcoStart.toDate().getTime(), "IcoDateEnd": dtIcoEnd.toDate().getTime(), "TransactionGaz": 94000, "GazPice": 24 }, function (err, instance) {
 				if (err) {
 					logger.error("Can't update param.attributes for param.id: " + instance.id + " err:" + err);
 					return cb("Can't update param.attributes err:" + JSON.stringify(err), null);
@@ -405,7 +408,7 @@ SmartContract.prototype.fixParam = function (cb) {
 			mParam.create({ ICOWalletTokenAddress: config.walletTokenAddress, ICOWalletEthereumAddress: config.walletEthereumAddress, ICOWalletDiscount1Address: config.walletDiscount1Address, ICOWalletDiscount2Address: config.walletDiscount2Address, 
 				USDEthereumPrice: config.usdEthereumPrice, USDTokenPrice: config.usdTokenPrice, Discount1Factor: config.discount1Factor, Discount2Factor: config.discount2Factor, TransactionGaz: config.transactionGaz, GazPice: config.gazPrice,
 				TokenContractTransactionHash: "0x6a8d436109e99c29d4f5234e13413203e72181d2a3e5f28b3f6732a42c540fdb", TokenContractAddress : "0x1595f85e801257aaaf5eedcc1fc95e03ea9d90fd", NbTotalToken: 80000000, NbTokenToSell: 80000000, NbTokenSold: 0.0, NbEthereum: 0.0, 
-				LastProcessedBlock: 6404000, BlockTokenStart: 6404000, NbBlockTransactionConfirmation: 6, IcoDateStart: dtIcoStart.getTime(), IcoDateEnd: dtIcoEnd.getTime() }, (err, instance) => {
+				LastProcessedBlock: 6404000, BlockTokenStart: 6404000, NbBlockTransactionConfirmation: 6, IcoDateStart: dtIcoStart.toDate().getTime(), IcoDateEnd: dtIcoEnd.toDate().getTime() }, (err, instance) => {
 				if (err) {
 					logger.error("Error occurs when adding default param in table Param error: " + JSON.stringify(err));
 					return cb("Can't update param.attributes err:" + JSON.stringify(err), null);

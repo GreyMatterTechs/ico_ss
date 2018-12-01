@@ -12,6 +12,7 @@ const request   = require('superagent');
 const config	= reqlocal(path.join('server', 'config' + (process.env.NODE_ENV === undefined ? '' : ('.' + process.env.NODE_ENV)) + '.js'));
 const logger	= reqlocal(path.join('server', 'boot', 'winston.js')).logger;
 const math      = require("mathjs");
+const moment    = require('moment');
 
 
 var appname;
@@ -82,8 +83,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var ICOWalletDiscount2Address = params[0].ICOWalletDiscount2Address;
         var Discount1Factor = params[0].Discount1Factor;
         var Discount2Factor = params[0].Discount2Factor;
-        var icoDateStart = params[0].IcoDateStart;
-        var icoDateEnd = params[0].IcoDateEnd;
+        var icoDateStart = moment.utc(params[0].IcoDateStart);
+        var icoDateEnd = moment.utc(params[0].IcoDateEnd);
         var icoState = 1;
 
         logger.info("Inital token owner is: " + ICOWalletTokenAddress + " ethereum receiver: " + ICOWalletEthereumAddress + " ICOWalletDiscount1Address: " + ICOWalletDiscount1Address + " ICOWalletDiscount2Address: " + ICOWalletDiscount2Address + " Discount1Factor: " + Discount1Factor + " Discount2Factor: " + Discount2Factor, + " IcoDateStart:" + new Date(icoDateStart).toUTCString() + " IcoDateStop:" + new Date(icoDateEnd).toUTCString());
@@ -183,22 +184,29 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             return [toSCTransactionsArray, fromSenderTransactionsArray];
         }
     
-        function SendIcoState(IcoDateStart, IcoDateEnd)
+        function SendIcoState(IcoDateStart, IcoDateEnd, first)
         {
             var newIcoState = 1;
-            if (IcoDateStart < new Date().getTime())
+            var aMinuteAgo = moment().add(60, 'seconds');
+            var dateActual = moment();
+            if (aMinuteAgo.isAfter(IcoDateStart))
             {
                 newIcoState += 1;
             }
-            if (IcoDateEnd < new Date().getTime())
+            if (dateActual.isAfter(IcoDateStart))
+            {
+                newIcoState += 1;
+            }
+            if (dateActual.isAfter(IcoDateEnd))
             {
                 newIcoState += 1;
             }
 
-            if (newIcoState != icoState)
+            if (newIcoState != icoState || first)
             {
                 icoState = newIcoState;
-                sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
+                var cta = icoState > 1 ? transactionReceipt.contractAddress : "";
+                sendParams('setState', { "state": icoState, contractAddress: cta}, (err, responseTxt) => {});
             }
         }
 
@@ -259,7 +267,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         var nbTokenToTransfert = nbEth.dividedBy(ajustedTokenPrice);
                         var nbTokenUnitToTransfert = nbTokenToTransfert.times(Math.pow(10, decimal));
 
-                        if (nbEth < 0.1 || icoState === 3) {
+                        if (nbEth < 0.1 || icoState === 4) {
                             nbTokenToTransfert = web3.toBigNumber(0);
                             nbTokenUnitToTransfert = web3.toBigNumber(0);
                         }
@@ -267,7 +275,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                         logger.info(" -> Send: " + nbTokenToTransfert.toNumber().toFixed(8) + " SSW to " + e.from + " with discount factor: " + discountFactor);
 
                         if (!missingToken) {
-                            if (nbEth > 0.1 && icoState !== 3) {
+                            if (nbEth > 0.1 && icoState !== 4) {
                                 ethereumReceived += nbEth.toNumber();
                                 nbTokenSold += nbTokenToTransfert.toNumber();
                             }
@@ -646,14 +654,14 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
         var nbTokenSold = totalToken - adjustedBalance;;
 
-        SendIcoState(icoDateStart, icoDateEnd);
+        SendIcoState(icoDateStart, icoDateEnd, true);
 
         /**
          * Send ICO params to website
          */
         var Webparams = {
             state:			icoState,
-            wallet:			icoState === 2 ? ICOWalletTokenAddress : "",
+            wallet:			icoState === 3 ? ICOWalletTokenAddress : "",
             contractAddress: icoState > 1 ? transactionReceipt.contractAddress : "",
             tokenName:  	"SSW",
             tokenPriceUSD:	tokenPriceUSD.toNumber(),
@@ -663,8 +671,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             tokensTotal:  	totalToken,
             ethTotal:   	params[0].NbEthereum,
             tokensSold:  	params[0].NbTokenSold,
-            dateStart:   	icoDateStart,
-            dateEnd:  		icoDateEnd
+//params[0].IcoDateStart
+//params[0].IcoDateEnd
+            dateStart:   	icoDateStart.toISOString(),
+            dateEnd:  		icoDateEnd.toISOString()
         }
 
         sendParams("setParams", Webparams, (err, responseTxt) => {
@@ -798,16 +808,16 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 }
 
                 if (adjustedBalance <= (totalToken - totalTokenToSend)) {
-                    if (icoState !== 3)
+                    if (icoState !== 4)
                     {
-                        icoState = 3;
+                        icoState = 4;
                         sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
                     }
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
                 }
-                if (checkMode == 0 && icoState !== 3) {
-                    SendIcoState(icoDateStart, icoDateEnd);
+                if (checkMode == 0 && icoState !== 4) {
+                    SendIcoState(icoDateStart, icoDateEnd, false);
                 }
 
                 if (math.ceil(nbTokenSold) < (totalToken - adjustedBalance)) {
