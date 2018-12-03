@@ -236,4 +236,30 @@ module.exports = function(Referrer) {
 			}
 		});
 	};
+
+	function refereral(wallet, cb) {
+		Referrer.find( { where: { WalletReferrer: wallet}}, function(err, instance){
+			if (err) {
+				logger.error("Error occurs when find a referrer in table for wallet: " + wallet + " error: " + JSON.stringify(err));
+				return cb(err);
+			}
+			else if (instance.length > 0)
+			{
+				var referrer = instance[0].WalletReferrer;
+				var referrals = [];
+				instance.foreach(function(e){
+					referrals.push(e.WalletInvestor);
+				})
+
+				request
+				.post(config.webURI + '/api/Referrers/register')
+				.send({wallets: {referrer: referrer, referrals: referrals}})
+				.timeout(5000)
+				.end((err, res) => {
+					return cb(err);
+				})
+				return cb(null);	// ok
+			}
+		})
+	}
 };

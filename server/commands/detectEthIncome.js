@@ -499,6 +499,9 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     if (err) return cb(err, null);
                     if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
                         lastGetCot = JSON.parse(res.text);
+
+                        pingAlive(lastGetCot);
+
                         return cb(null, lastGetCot);
                     } else {
                         return cb('request() error. url:' + url, null);
@@ -562,6 +565,10 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             }
         }
     
+        function pingAlive(cotation) {
+            sendParams('pingAlive', { "EthPrice": cotation.data.quotes.USD.price }, (err, responseTxt) => {});
+        }
+
         /**
          * Get a valid token
          */
@@ -594,6 +601,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 request
                     .post(config.webURI + '/api/ICOs/' + ap)
                     .send({tokenId: tokenId, params: par})
+                    .timeout(5000)
                     .end((err, res) => {
                         if (err) {
                             if (err.status === 401 /* && err.code === 'INVALID_TOKEN' */) {            // token invalide
@@ -812,6 +820,20 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     {
                         icoState = 4;
                         sendParams('setState', { "state": icoState }, (err, responseTxt) => {});
+
+                        var paramsUpdated = {
+                            state:          icoState,
+                            ethReceived:    0,
+                            tokensSend:     0,
+                            ethTotal:       ethereumReceived,
+                            tokensSold:     totalToken - adjustedBalance,
+                            tokenPriceUSD:	tokenPriceUSD.toNumber(),
+                            tokenPriceETH:	tokenPriceEth.toNumber(),
+                            discount:       discountFactor
+                        }
+                        sendParams('setReceivedEth', paramsUpdated, (err, responseTxt) => {
+                            if (err) return err;
+                        });
                     }
 
                     logger.info("ICO hard cap reached !, token left: " + adjustedBalance + ", Ethereum gain: " + ethereumReceived.toFixed(6) );
