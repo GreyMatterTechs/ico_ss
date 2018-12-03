@@ -43,6 +43,21 @@
 			"http": {
 			  "verb": "post"
 			}
+		},
+		"getReferrals": {
+			"accepts": [{
+				"arg": "wallet",
+				"type": "Object",
+				"root": true
+			}],
+			"returns": {
+				"arg": "referrals",
+				"type": "Object",
+				"root": true
+			},
+			"http": {
+			  "verb": "post"
+			}
 		}
 	}
 }

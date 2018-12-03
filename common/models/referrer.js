@@ -193,7 +193,7 @@ module.exports = function(Referrer) {
 			}
 		});
 		*/
-		/* Ré-écriture avec async.js, qui permet d'avoir un callback quand la boucle est finie 
+		/* Ré-écriture avec async.js, qui permet d'avoir un callback quand la boucle est finie
 		 * Pense à faire un $ npm install --save async
 		 */
 		const ERRCODES = {
@@ -237,29 +237,36 @@ module.exports = function(Referrer) {
 		});
 	};
 
-	function refereral(wallet, cb) {
-		Referrer.find( { where: { WalletReferrer: wallet}}, function(err, instance){
+	Referrer.getReferrals = function(wallet, cb) {
+		const ERRCODES = {
+			NOITEM:	'0x1001',
+			UNKNOWN: '0x1002'
+		};
+		var e = new Error(g.f('Invalid Param'));
+		e.status = e.statusCode = 401;
+		e.code = 'INVALID_PARAM';
+		if (!isString(wallet)) return cb(e, null);
+		if (!isETHAddress(wallet)) return cb(e, null);
+		Referrer.find({where: {WalletReferrer: wallet}}, function(err, instances) {
 			if (err) {
 				logger.error("Error occurs when find a referrer in table for wallet: " + wallet + " error: " + JSON.stringify(err));
-				return cb(err);
-			}
-			else if (instance.length > 0)
-			{
-				var referrer = instance[0].WalletReferrer;
+				e.code = ERRCODES.UNKNOWN;
+				return cb(e, null);												// retour au client avec le code d'erreur
+			} else if (instances.length > 0) {
+				var referrer = instances[0].WalletReferrer;
 				var referrals = [];
-				instance.foreach(function(e){
+				instances.foreach(function(e) {
 					referrals.push(e.WalletInvestor);
-				})
-
-				request
-				.post(config.webURI + '/api/Referrers/register')
-				.send({wallets: {referrer: referrer, referrals: referrals}})
-				.timeout(5000)
-				.end((err, res) => {
-					return cb(err);
-				})
-				return cb(null);	// ok
+				});
+				return cb(null, {referrer: referrer, referrals: referrals});
+			} else if (instances.length === 0) {
+				e.code = ERRCODES.NOITEM;
+				return cb(e, null);												// retour au client avec le code d'erreur
+			} else {
+				e.code = ERRCODES.UNKNOWN;
+				return cb(e, null);												// retour au client avec le code d'erreur
 			}
-		})
-	}
+		});
+	};
+
 };
