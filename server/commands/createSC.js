@@ -198,6 +198,7 @@ function getCotation(cryptoId, cb) {
 	request
 	.get(url)
 	.query({convert: 'EUR'})
+	.timeout(5000)
 	.end((err, res) => {
 		if (err) return cb(err, null);
 		if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
@@ -214,7 +215,8 @@ function getCotation(cryptoId, cb) {
 function getCoinMarketCapId(cryptoName, cb) {
     var url = config.cmcURI + '/listings/';
     request
-    .get(url)
+	.get(url)
+	.timeout(5000)
     .end((err, res) => {
         if (err) return cb(err, null);
         if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
@@ -247,6 +249,7 @@ function login(login, pass, cb) {
 	request
 	.post(url)
 	.send({username: login, password: pass})
+	.timeout(5000)
 	.end((err, res) => {
 		if (err) return cb(err);
 		if (res.body && !res.error && res.statusCode===200) {
@@ -268,6 +271,7 @@ function sendParams(api, params, cb) {
 		request
 		.post(url)
 		.send({tokenId: tokenId, params: params})
+		.timeout(5000)
 		.end((err, res) => {
 			if (err) return cb(err);
 			return cb(null, true);

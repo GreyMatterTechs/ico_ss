@@ -494,7 +494,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                 lastDateGetCot = new Date();
                 request
                 .get(url)
-                .query({convert: 'EUR'})
+				.query({convert: 'EUR'})
+				.timeout(5000)
                 .end((err, res) => {
                     if (err) return cb(err, null);
                     if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
@@ -529,7 +530,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             if (lastDateGetId === "" || ((new Date() - lastDateGetId) > 60000)) {
                lastDateGetId = new Date();
                 request
-                .get(url)
+				.get(url)
+				.timeout(5000)
                 .end((err, res) => {
                     if (err) return cb(err, null);
                     if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
@@ -576,7 +578,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             const url = config.webURI + '/login';
             request
             .post(url)
-            .send({username: login, password: pass})
+			.send({username: login, password: pass})
+			.timeout(5000)
             .end((err, res) => {
                 if (err) return cb(err);
                 if (res.body && !res.error && res.statusCode===200) {
