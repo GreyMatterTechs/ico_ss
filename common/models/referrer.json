@@ -47,12 +47,12 @@
 		"getReferrals": {
 			"accepts": [{
 				"arg": "wallet",
-				"type": "Object",
+				"type": "String",
 				"root": true
 			}],
 			"returns": {
 				"arg": "referrals",
-				"type": "Object",
+				"type": "String",
 				"root": true
 			},
 			"http": {
