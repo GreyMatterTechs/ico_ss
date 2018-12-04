@@ -210,8 +210,8 @@ module.exports = function(Referrer) {
 	};
 
 	Referrer.getReferrals = function(wallet, cb) {
-		logger.info("getReferrals called");
-		wallet = wallet.wallet;
+		logger.info("getReferrals called. wallet = " + JSON.stringify(wallet));
+		// wallet = wallet.wallet;
 		const ERRCODES = {
 			NOITEM:	'0x1001',
 			UNKNOWN: '0x1002'
@@ -233,7 +233,7 @@ module.exports = function(Referrer) {
 				logger.info("getReferrals  instances found");
 				var referrer = instances[0].WalletReferrer;
 				var referrals = [];
-				instances.foreach(function(e) {
+				instances.forEach(function(e) {
 					referrals.push(e.WalletInvestor);
 				});
 				return cb(null, {referrer: referrer, referrals: referrals});
