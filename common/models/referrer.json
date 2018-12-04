@@ -52,7 +52,7 @@
 			}],
 			"returns": {
 				"arg": "referrals",
-				"type": "String",
+				"type": "Object",
 				"root": true
 			},
 			"http": {
