@@ -168,34 +168,6 @@ module.exports = function(Referrer) {
 			}
 		}
 
-		/* FIX: Philippe
-		 * 1 - On ne peux pas appeler cb() une fois dans chaque itération de boucle
-		 *     Il faut un seul appel possible à cb().
-		 * 2 - Pas besoin de tester ref===null, c'est déjà fait dans la boucle isETHAddress() juste au dessus
-		 */
-		/*
-		wallets.referrals.forEach(function(ref) {
-			if (ref !== null && ref !== "" && ref !== undefined) {
-				Referrer.find( { where: { WalletInvestor: ref}}, function(err, instance) {
-					if (err) {
-						return cb(err, null);
-					}
-					else if (instance.length > 0) {
-						return cb(null, "referral: " + ref + " already in table!");
-					}
-					Referrer.create({ WalletInvestor: ref, WalletReferrer: wallets.referrer, StartDateReferrer: new Date().getTime()}, function(err, referrer) {
-						if (err) {
-							return cb(err, null);
-						}
-						return cb(null, "Referral: " + referrer.WalletInvestor + " of referrer: " + referrer.WalletReferrer + " added");
-					});
-				});
-			}
-		});
-		*/
-		/* Ré-écriture avec async.js, qui permet d'avoir un callback quand la boucle est finie
-		 * Pense à faire un $ npm install --save async
-		 */
 		const ERRCODES = {
 			// codes d'erreurs totalement arbitraires :)
 			// 1000 est réservé pour le code coté client.

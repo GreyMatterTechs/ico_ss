@@ -45,11 +45,11 @@
 			}
 		},
 		"getReferrals": {
-			"accepts": [{
+			"accepts": {
 				"arg": "wallet",
 				"type": "String",
 				"root": true
-			}],
+			},
 			"returns": {
 				"arg": "referrals",
 				"type": "Object",
