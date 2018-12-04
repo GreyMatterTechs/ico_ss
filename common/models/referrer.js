@@ -210,8 +210,6 @@ module.exports = function(Referrer) {
 	};
 
 	Referrer.getReferrals = function(wallet, cb) {
-		logger.info("getReferrals called. wallet = " + JSON.stringify(wallet));
-		// wallet = wallet.wallet;
 		const ERRCODES = {
 			NOITEM:	'0x1001',
 			UNKNOWN: '0x1002'
@@ -219,18 +217,14 @@ module.exports = function(Referrer) {
 		var e = new Error(g.f('Invalid Param'));
 		e.status = e.statusCode = 401;
 		e.code = 'INVALID_PARAM';
-		logger.info("getReferrals before wallet tests");
 		if (!isString(wallet)) return cb(e, null);
-		logger.info("getReferrals  wallet is a string");
 		if (!isETHAddress(wallet)) return cb(e, null);
-		logger.info("getReferrals  wallet is a valid adress");
 		Referrer.find({where: {WalletReferrer: wallet}}, function(err, instances) {
 			if (err) {
 				logger.error("Error occurs when find a referrer in table for wallet: " + wallet + " error: " + JSON.stringify(err));
 				e.code = ERRCODES.UNKNOWN;
 				return cb(err, null);												// retour au client avec le code d'erreur
 			} else if (instances.length > 0) {
-				logger.info("getReferrals  instances found");
 				var referrer = instances[0].WalletReferrer;
 				var referrals = [];
 				instances.forEach(function(e) {
@@ -238,11 +232,9 @@ module.exports = function(Referrer) {
 				});
 				return cb(null, {referrer: referrer, referrals: referrals});
 			} else if (instances.length === 0) {
-				logger.info("getReferrals no instance");
 				e.code = ERRCODES.NOITEM;
 				return cb(e, null);												// retour au client avec le code d'erreur
 			} else {
-				logger.info("getReferrals error unknown");
 				e.code = ERRCODES.UNKNOWN;
 				return cb(e, null);												// retour au client avec le code d'erreur
 			}
