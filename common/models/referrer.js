@@ -210,6 +210,7 @@ module.exports = function(Referrer) {
 	};
 
 	Referrer.getReferrals = function(wallet, cb) {
+		wallet = wallet.wallet;
 		logger.info("getReferrals called");
 		const ERRCODES = {
 			NOITEM:	'0x1001',

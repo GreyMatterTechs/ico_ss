@@ -47,7 +47,7 @@
 		"getReferrals": {
 			"accepts": {
 				"arg": "wallet",
-				"type": "String",
+				"type": "Object",
 				"root": true
 			},
 			"returns": {
