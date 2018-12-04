@@ -497,11 +497,11 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 				.query({convert: 'EUR'})
 				.timeout(5000)
                 .end((err, res) => {
+                    var lastGetCot = null;
+                    pingAlive(lastGetCot);
                     if (err) return cb(err, null);
                     if (res.body && !res.error && res.statusCode===200 && res.text && res.text.length>0) {
                         lastGetCot = JSON.parse(res.text);
-
-                        pingAlive(lastGetCot);
 
                         return cb(null, lastGetCot);
                     } else {
@@ -568,7 +568,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
     
         function pingAlive(cotation) {
-            sendParams('pingAlive', { "EthPrice": cotation.data.quotes.USD.price }, (err, responseTxt) => {});
+            sendParams('pingAlive', { "EthPrice": cotation == null ? "" : cotation.data.quotes.USD.price }, (err, responseTxt) => {});
         }
 
         /**

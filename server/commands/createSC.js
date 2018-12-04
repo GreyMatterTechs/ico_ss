@@ -74,7 +74,7 @@ async function WalletReceived(param, contractCreactionBlock, web3, cb) {
 	// create ERC20 contract
 	let secureswapContract = web3.eth.contract(formatedAbi);
 
-	// deploy the contract
+	// deploy the contract => 	add try catch
 	var secureswapContractInstance = secureswapContract.new(
 		{
 			from: tokenInitialOwnerAddress,
