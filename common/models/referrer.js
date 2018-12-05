@@ -234,7 +234,7 @@ module.exports = function(Referrer) {
 				});
 				return cb(null, {referrer: referrer, referrals: referrals});
 			} else if (instances.length === 0) {
-				referrer = instances[0].WalletReferrer;
+				referrer = wallet;
 				referrals = [];
 				return cb(null, {referrer: referrer, referrals: referrals});
 			} else {
