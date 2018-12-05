@@ -217,6 +217,8 @@ module.exports = function(Referrer) {
 		var e = new Error(g.f('Invalid Param'));
 		e.status = e.statusCode = 401;
 		e.code = 'INVALID_PARAM';
+		var referrer;
+		var referrals;
 		if (!isString(wallet)) return cb(e, null);
 		if (!isETHAddress(wallet)) return cb(e, null);
 		Referrer.find({where: {WalletReferrer: wallet}}, function(err, instances) {
@@ -225,14 +227,16 @@ module.exports = function(Referrer) {
 				e.code = ERRCODES.UNKNOWN;
 				return cb(err, null);												// retour au client avec le code d'erreur
 			} else if (instances.length > 0) {
-				var referrer = instances[0].WalletReferrer;
-				var referrals = [];
+				referrer = instances[0].WalletReferrer;
+				referrals = [];
 				instances.forEach(function(e) {
 					referrals.push(e.WalletInvestor);
 				});
 				return cb(null, {referrer: referrer, referrals: referrals});
 			} else if (instances.length === 0) {
-				return cb(null, {referrer: referrer, referrals: []});
+				referrer = instances[0].WalletReferrer;
+				referrals = [];
+				return cb(null, {referrer: referrer, referrals: referrals});
 			} else {
 				e.code = ERRCODES.UNKNOWN;
 				return cb(e, null);												// retour au client avec le code d'erreur
