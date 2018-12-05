@@ -232,8 +232,7 @@ module.exports = function(Referrer) {
 				});
 				return cb(null, {referrer: referrer, referrals: referrals});
 			} else if (instances.length === 0) {
-				e.code = ERRCODES.NOITEM;
-				return cb(e, null);												// retour au client avec le code d'erreur
+				return cb(null, {referrer: referrer, referrals: []});
 			} else {
 				e.code = ERRCODES.UNKNOWN;
 				return cb(e, null);												// retour au client avec le code d'erreur
