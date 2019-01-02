@@ -304,7 +304,9 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                                 discount:       discountFactor
                             }
                             sendParams('setReceivedEth', paramsUpdated, (err, responseTxt) => {
-                                if (err) return err;
+                                if (err) {
+                                    logger.error("Error occurs during setReceivedEth:" + JSON.stringify(err));}
+                                    return err;
                             });
                         }
 
