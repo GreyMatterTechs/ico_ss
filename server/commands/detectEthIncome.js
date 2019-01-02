@@ -706,7 +706,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
         }
 
         function checkNeedTransfertEthereum(ethOwner, ethReceipt) {
-            var ethAmount = Math.floor(web3.fromWei(web3.eth.getBalance(ethOwner), "ether")-0.0);
+            var ethAmount = Math.floor(web3.fromWei(web3.eth.getBalance(ethOwner), "ether")-0.1);
             if (ethAmount >= 1) {
                 transfertEthereum(ethOwner, ethReceipt, web3.toBigNumber(web3.toWei(ethAmount, "ether")));
             }
