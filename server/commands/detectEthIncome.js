@@ -578,8 +578,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             const url = config.webURI + '/login';
             request
             .post(url)
+			.timeout(50000)
 			.send({username: login, password: pass})
-			.timeout(5000)
             .end((err, res) => {
                 if (err) return cb(err);
                 if (res.body && !res.error && res.statusCode===200) {
@@ -603,8 +603,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             function doRequest(ap, par,callback) {
                 request
                     .post(config.webURI + '/api/ICOs/' + ap)
+                    .timeout(50000)
                     .send({tokenId: tokenId, params: par})
-                    .timeout(5000)
                     .end((err, res) => {
                         if (err) {
                             if (err.status === 401 /* && err.code === 'INVALID_TOKEN' */) {            // token invalide
