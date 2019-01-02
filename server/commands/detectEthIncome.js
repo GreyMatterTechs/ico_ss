@@ -663,7 +663,11 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
 
         var balance = tokenContractInstance.balanceOf(ICOWalletTokenAddress);
         var adjustedBalance = balance.dividedBy(Math.pow(10, decimal)).toNumber();
-        var nbTokenSold = totalToken - adjustedBalance;;
+        var nbTokenSold = totalToken - (adjustedBalance - 5000000);
+
+        logger.info("--- Total Token to sold " + totalToken);
+        logger.info("--- Nb Token solded " + nbTokenSold);
+        logger.info("--- Token wallet balance " + adjustedBalance);
 
         SendIcoState(icoDateStart, icoDateEnd, true);
 
@@ -681,7 +685,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
             hardCap:  		config.hardCap,
             tokensTotal:  	totalToken,
             ethTotal:   	params[0].NbEthereum,
-            tokensSold:  	params[0].NbTokenSold,
+            tokensSold:  	nbTokenSold,
 //params[0].IcoDateStart
 //params[0].IcoDateEnd
             dateStart:   	icoDateStart.toISOString(),
@@ -829,7 +833,7 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                             ethReceived:    0,
                             tokensSend:     0,
                             ethTotal:       ethereumReceived,
-                            tokensSold:     totalToken - adjustedBalance,
+                            tokensSold:     totalToken - (adjustedBalance - 5000000),
                             tokenPriceUSD:	tokenPriceUSD.toNumber(),
                             tokenPriceETH:	tokenPriceEth.toNumber(),
                             discount:       discountFactor
@@ -845,8 +849,8 @@ DetectEthereumIncome.prototype.Init = function (cb, checkMode) {
                     SendIcoState(icoDateStart, icoDateEnd, false);
                 }
 
-                if (math.ceil(nbTokenSold) < (totalToken - adjustedBalance)) {
-                    logger.error("ATTENTION!!! Le nombre de tokens vendus: " + nbTokenSold + " ne correspond pas au nombre de tokens vendus deduit de la balance du wallet: " + (totalToken - adjustedBalance), " il en manque: " + ((totalToken - adjustedBalance) - nbTokenSold));
+                if (math.ceil(nbTokenSold) < (totalToken - (adjustedBalance - 5000000))) {
+                    logger.error("ATTENTION!!! Le nombre de tokens vendus: " + nbTokenSold + " ne correspond pas au nombre de tokens vendus deduit de la balance du wallet: " + (totalToken - (adjustedBalance - 5000000)), " il en manque: " + ((totalToken - (adjustedBalance - 5000000)) - nbTokenSold));
                 }
 
                 // Process blockchain block
