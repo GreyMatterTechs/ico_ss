@@ -432,6 +432,41 @@ SmartContract.prototype.fixParam = function (cb) {
  * 
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
  */
+SmartContract.prototype.setPrice = function (cb) {
+	logger.info(config.appName + ': fix Params...');
+	
+	mParam.find(function(err, params) {
+        if (err){
+			logger.error("Erreur occurs when reading Param table, error: %o", JSON.stringify(err));
+			return cb("Erreur occurs when reading Param table, error: " +  JSON.stringify(err), null);
+		}
+		if (params.length != 0)
+		{
+			logger.info("Param table contains: " + params.length + " entry, update entries...");
+
+			params[0].updateAttributes( { "USDTokenPrice": tokenPriceUSD.toNumber() }, function (err, instance) {
+				if (err) {
+					logger.error("Can't update param.attributes for param.id: " + instance.id + " err:" + err);
+					return cb("Can't update param.attributes err:" + JSON.stringify(err), null);
+				}
+				logger.info("Price fixed: " + instance.USDTokenPrice + " " + instance.USDEthereumPrice);
+			});
+
+			logger.info("Table param content---------------------------");
+			params.forEach(element => {
+				logger.info(element);
+			});
+			logger.info("----------------------------------------------");
+			return cb(null, "Table Param updated");
+		}
+	});
+}
+
+/**
+ * fix parameters
+ * 
+ * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
+ */
 SmartContract.prototype.displayParam = function (cb) {
 	logger.info(config.appName + ': display Params...');
     

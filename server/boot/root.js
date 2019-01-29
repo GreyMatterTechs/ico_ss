@@ -253,6 +253,20 @@ module.exports = function(server) {
 		});
 	});
 
+	
+	// ------------------------------------------------
+	// Fix token price
+	//
+	// ------------------------------------------------
+	router.get('/setPrice', function (req, res) {
+		var sc = require('../commands/createSC')(server, "setPrice");
+		sc.setPrice( (err, result) => {
+			if (err) return res.send('Error: '+err);
+			res.send(result);
+		});
+	});
+
+
 	// ------------------------------------------------
 	// Display Parma table contents
 	//
