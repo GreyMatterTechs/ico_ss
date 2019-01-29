@@ -432,7 +432,7 @@ SmartContract.prototype.fixParam = function (cb) {
  * 
  * @callback {Function} cb A callback which is called when token is created and deployed, or an error occurs. Invoked with (err, tokenInfos).
  */
-SmartContract.prototype.setPrice = function (cb) {
+SmartContract.prototype.setPrice = function (p, cb) {
 	logger.info(config.appName + ': fix Params...');
 	
 	mParam.find(function(err, params) {
@@ -444,7 +444,7 @@ SmartContract.prototype.setPrice = function (cb) {
 		{
 			logger.info("Param table contains: " + params.length + " entry, update entries...");
 
-			params[0].updateAttributes( { "USDTokenPrice": tokenPriceUSD.toNumber() }, function (err, instance) {
+			params[0].updateAttributes( { "USDTokenPrice": p }, function (err, instance) {
 				if (err) {
 					logger.error("Can't update param.attributes for param.id: " + instance.id + " err:" + err);
 					return cb("Can't update param.attributes err:" + JSON.stringify(err), null);

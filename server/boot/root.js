@@ -247,7 +247,7 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	router.get('/fixParam', function (req, res) {
 		var sc = require('../commands/createSC')(server, "fixParam");
-		sc.fixParam( (err, result) => {
+		sc.fixParam(req.query.p, (err, result) => {
 			if (err) return res.send('Error: '+err);
 			res.send(result);
 		});
