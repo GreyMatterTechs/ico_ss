@@ -151,7 +151,7 @@ async function WalletReceived(param, contractCreactionBlock, web3, cb) {
 				return cb(null, "New Token ERC20 infos: TokenName: " + tokenName + " TokenSymbol: " + tokenSymbol + " Decimal: " + decimal.toNumber() + " Token owner balance: " + adjustedBalance);
 			});
 
-			var tokenPriceUSD = web3.toBigNumber(0.45);
+			var tokenPriceUSD = web3.toBigNumber(config.usdTokenPrice);
 			var tokenPriceETH = tokenPriceUSD.dividedBy(ethereumPrice);
 
 			var stateIco = 1;
