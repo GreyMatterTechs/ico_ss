@@ -247,7 +247,7 @@ module.exports = function(server) {
 	// ------------------------------------------------
 	router.get('/fixParam', function (req, res) {
 		var sc = require('../commands/createSC')(server, "fixParam");
-		sc.fixParam(req.query.p, (err, result) => {
+		sc.fixParam( (err, result) => {
 			if (err) return res.send('Error: '+err);
 			res.send(result);
 		});
@@ -259,8 +259,11 @@ module.exports = function(server) {
 	//
 	// ------------------------------------------------
 	router.get('/setPrice', function (req, res) {
+		if (!req.query.p) {
+			return res.send('Error: bad params.');
+		}
 		var sc = require('../commands/createSC')(server, "setPrice");
-		sc.setPrice( (err, result) => {
+		sc.setPrice( req.query.p, (err, result) => {
 			if (err) return res.send('Error: '+err);
 			res.send(result);
 		});
